@@ -1,3 +1,7 @@
+// TODO: This should be moved to a separate crate so that `stork` doesn't need to
+//       pull `cosmwasm_std` as a dependency. This might mean `T: cosmwasm_std::Storage`
+//       will need to be wrapped in a newtype, but it should be an acceptable tradeoff.
+
 impl<B> super::StorageBackend for B
 where
     B: cosmwasm_std::Storage,
