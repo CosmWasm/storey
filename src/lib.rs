@@ -1,7 +1,11 @@
 mod backend;
+mod containers;
+mod encoding;
+mod init;
 
 #[cfg(test)]
 mod tests {
+    // TODO: the reliance on cosmwasm_std is temporary - this should be replaced with our own mocks
     use cosmwasm_std::testing::MockStorage;
 
     use crate::backend::{
