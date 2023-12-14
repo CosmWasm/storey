@@ -1,7 +1,6 @@
 mod backend;
 mod containers;
 mod encoding;
-mod init;
 
 #[cfg(test)]
 mod tests {
