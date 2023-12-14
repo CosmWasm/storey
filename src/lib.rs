@@ -2,6 +2,8 @@ mod backend;
 mod containers;
 mod encoding;
 
+pub use encoding::{DecodableWith, DecodableWithImpl, EncodableWith, EncodableWithImpl, Encoding};
+
 #[cfg(test)]
 mod tests {
     // TODO: the reliance on cosmwasm_std is temporary - this should be replaced with our own mocks
