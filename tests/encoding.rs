@@ -1,22 +1,19 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 
-use stork::Encoding;
+use stork::{DecodableWith, EncodableWith, Encoding};
 
-struct Borsh<T>(T);
+struct Borsh;
 
-impl<T> Encoding for Borsh<T>
-where
-    T: BorshSerialize + BorshDeserialize,
-{
-    type Type = T;
+impl Encoding for Borsh {
     type EncodeError = std::io::Error;
     type DecodeError = std::io::Error;
+}
 
-    fn encode(v: &Self::Type) -> Result<Vec<u8>, Self::EncodeError> {
-        borsh::to_vec(v)
-    }
-
-    fn decode(data: &[u8]) -> Result<Self::Type, Self::DecodeError> {
-        borsh::from_slice(data)
+impl<T> EncodableWith<Borsh> for T
+where
+    T: BorshSerialize,
+{
+    fn encode(&self) -> Result<Vec<u8>, Borsh::EncodeError> {
+        self.try_to_vec()
     }
 }

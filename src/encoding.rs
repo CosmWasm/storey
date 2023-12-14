@@ -1,8 +1,12 @@
 pub trait Encoding {
-    type Type;
     type EncodeError;
     type DecodeError;
+}
 
-    fn encode(v: &Self::Type) -> Result<Vec<u8>, Self::EncodeError>;
-    fn decode(data: &[u8]) -> Result<Self::Type, Self::DecodeError>;
+pub trait EncodableWith<E: Encoding> {
+    fn encode(&self) -> Result<Vec<u8>, E::EncodeError>;
+}
+
+pub trait DecodableWith<E: Encoding>: Sized {
+    fn decode(data: &[u8]) -> Result<Self, E::DecodeError>;
 }
