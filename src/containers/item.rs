@@ -1,19 +1,20 @@
 use std::marker::PhantomData;
 
 use crate::backend::StorageBackend;
-use crate::encoding::{DecodableWith, EncodableWith, Encoding};
+use crate::encoding::Encoding;
+use crate::{DecodableWith, EncodableWith};
 
 use super::Container;
 
 struct Item<'k, E, T> {
     prefix: &'k [u8],
-    phantom: PhantomData<(T, E)>,
+    phantom: PhantomData<(E, T)>,
 }
 
 impl<'k, E, T> Item<'k, E, T>
 where
     E: Encoding,
-    T: DecodableWith<E> + EncodableWith<E>,
+    T: EncodableWith<E> + DecodableWith<E>,
 {
     pub fn new(prefix: &'k [u8]) -> Self {
         Self {
@@ -36,14 +37,14 @@ where
     }
 }
 
-impl<T, E> Container<E> for Item<'_, E, T>
+impl<E, T> Container<E> for Item<'_, E, T>
 where
     E: Encoding,
-    T: DecodableWith<E> + EncodableWith<E> + Default,
+    T: EncodableWith<E> + DecodableWith<E> + Default,
 {
     type Item = T;
 
-    fn init(&self, storage: &mut impl StorageBackend) {
-        self.set(storage, &T::default());
+    fn init(&self, storage: &mut impl StorageBackend) -> Result<(), E::EncodeError> {
+        self.set(storage, &T::default())
     }
 }

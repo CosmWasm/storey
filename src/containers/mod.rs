@@ -8,5 +8,7 @@ mod item;
 pub trait Container<E: Encoding> {
     type Item: EncodableWith<E> + DecodableWith<E>;
 
-    fn init(&self, storage: &mut impl StorageBackend) {}
+    fn init(&self, storage: &mut impl StorageBackend) -> Result<(), E::EncodeError> {
+        Ok(())
+    }
 }
