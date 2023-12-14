@@ -1,49 +1,49 @@
-// TODO: This should be moved to a separate crate so that `stork` doesn't need to
-//       pull `cosmwasm_std` as a dependency. This might mean `T: cosmwasm_std::Storage`
-//       will need to be wrapped in a newtype, but it should be an acceptable tradeoff.
+use cosmwasm_std::testing::MockStorage;
+use cosmwasm_std::Storage as _;
 
-impl<B> super::StorageBackend for B
-where
-    B: cosmwasm_std::Storage,
-{
-    fn get(&self, key: &[u8]) -> Option<Vec<u8>> {
-        <B as cosmwasm_std::Storage>::get(self, key)
-    }
+struct TestStorage(MockStorage);
 
-    fn set(&mut self, key: &[u8], value: &[u8]) {
-        <B as cosmwasm_std::Storage>::set(self, key, value)
-    }
-
-    fn remove(&mut self, key: &[u8]) {
-        <B as cosmwasm_std::Storage>::remove(self, key)
+impl TestStorage {
+    pub fn new() -> Self {
+        Self(MockStorage::new())
     }
 }
 
-impl<B> super::StorageIterableBackend for B
-where
-    B: cosmwasm_std::Storage,
-{
+impl stork::StorageBackend for TestStorage {
+    fn get(&self, key: &[u8]) -> Option<Vec<u8>> {
+        MockStorage::get(&self.0, key)
+    }
+
+    fn set(&mut self, key: &[u8], value: &[u8]) {
+        MockStorage::set(&mut self.0, key, value)
+    }
+
+    fn remove(&mut self, key: &[u8]) {
+        MockStorage::remove(&mut self.0, key)
+    }
+}
+
+impl stork::StorageIterableBackend for TestStorage {
     type KeysIterator<'a> = Box<dyn Iterator<Item = Vec<u8>> + 'a> where Self: 'a;
     type ValuesIterator<'a> = Box<dyn Iterator<Item = Vec<u8>> + 'a> where Self: 'a;
     type PairsIterator<'a> = Box<dyn Iterator<Item = (Vec<u8>, Vec<u8>)> + 'a> where Self: 'a;
 
     fn pairs<'a>(&'a self, start: Option<&[u8]>, end: Option<&[u8]>) -> Self::PairsIterator<'a> {
-        self.range(start, end, cosmwasm_std::Order::Ascending)
+        self.0.range(start, end, cosmwasm_std::Order::Ascending)
     }
 
     fn keys<'a>(&'a self, start: Option<&[u8]>, end: Option<&[u8]>) -> Self::KeysIterator<'a> {
-        self.range_keys(start, end, cosmwasm_std::Order::Ascending)
+        self.0
+            .range_keys(start, end, cosmwasm_std::Order::Ascending)
     }
 
     fn values<'a>(&'a self, start: Option<&[u8]>, end: Option<&[u8]>) -> Self::ValuesIterator<'a> {
-        self.range_values(start, end, cosmwasm_std::Order::Ascending)
+        self.0
+            .range_values(start, end, cosmwasm_std::Order::Ascending)
     }
 }
 
-impl<B> super::StorageRevIterableBackend for B
-where
-    B: cosmwasm_std::Storage,
-{
+impl stork::StorageRevIterableBackend for TestStorage {
     type RevKeysIterator<'a> = Box<dyn Iterator<Item = Vec<u8>> + 'a> where Self: 'a;
     type RevValuesIterator<'a> = Box<dyn Iterator<Item = Vec<u8>> + 'a> where Self: 'a;
     type RevPairsIterator<'a> = Box<dyn Iterator<Item = (Vec<u8>, Vec<u8>)> + 'a> where Self: 'a;
@@ -53,7 +53,7 @@ where
         start: Option<&[u8]>,
         end: Option<&[u8]>,
     ) -> Self::RevPairsIterator<'a> {
-        self.range(start, end, cosmwasm_std::Order::Descending)
+        self.0.range(start, end, cosmwasm_std::Order::Descending)
     }
 
     fn rev_keys<'a>(
@@ -61,7 +61,8 @@ where
         start: Option<&[u8]>,
         end: Option<&[u8]>,
     ) -> Self::RevKeysIterator<'a> {
-        self.range_keys(start, end, cosmwasm_std::Order::Descending)
+        self.0
+            .range_keys(start, end, cosmwasm_std::Order::Descending)
     }
 
     fn rev_values<'a>(
@@ -69,6 +70,7 @@ where
         start: Option<&[u8]>,
         end: Option<&[u8]>,
     ) -> Self::RevValuesIterator<'a> {
-        self.range_values(start, end, cosmwasm_std::Order::Descending)
+        self.0
+            .range_values(start, end, cosmwasm_std::Order::Descending)
     }
 }
