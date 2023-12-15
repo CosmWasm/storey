@@ -4,47 +4,66 @@ use crate::backend::StorageBackend;
 use crate::encoding::Encoding;
 use crate::{DecodableWith, EncodableWith};
 
-use super::Container;
+use super::{Accessor, Container};
 
-struct Item<'k, E, T> {
-    prefix: &'k [u8],
+pub struct NonNullItem<E, T> {
     phantom: PhantomData<(E, T)>,
 }
 
-impl<'k, E, T> Item<'k, E, T>
+impl<E, T> NonNullItem<E, T>
 where
     E: Encoding,
     T: EncodableWith<E> + DecodableWith<E>,
 {
-    pub fn new(prefix: &'k [u8]) -> Self {
+    pub fn new() -> Self {
         Self {
-            prefix,
             phantom: PhantomData,
         }
     }
-
-    pub fn get(&self, storage: &mut impl StorageBackend, key: &[u8]) -> Result<T, E::DecodeError> {
-        let data = storage.get(key).unwrap();
-        let item = T::decode(&data)?;
-        Ok(item)
-    }
-
-    pub fn set(&self, storage: &mut impl StorageBackend, item: &T) -> Result<(), E::EncodeError> {
-        let data = item.encode()?;
-        storage.set(self.prefix, &data);
-
-        Ok(())
-    }
 }
 
-impl<E, T> Container<E> for Item<'_, E, T>
+impl<E, T> Container<E> for NonNullItem<E, T>
 where
     E: Encoding,
     T: EncodableWith<E> + DecodableWith<E> + Default,
 {
     type Item = T;
+    type AccessorT<'ns> = ItemAccess<'ns, E, T> where E:'ns, T:'ns;
 
-    fn init(&self, storage: &mut impl StorageBackend) -> Result<(), E::EncodeError> {
-        self.set(storage, &T::default())
+    fn init(ns: &[u8], storage: &mut impl StorageBackend) -> Result<(), E::EncodeError> {
+        Self::access(ns).set(storage, &T::default())
     }
+
+    fn access(prefix: &[u8]) -> ItemAccess<'_, E, T> {
+        ItemAccess {
+            namespace: prefix,
+            phantom: PhantomData,
+        }
+    }
+}
+
+pub struct ItemAccess<'k, E, T> {
+    namespace: &'k [u8],
+    phantom: PhantomData<&'k (E, T)>,
+}
+
+impl<'k, E, T> ItemAccess<'k, E, T>
+where
+    E: Encoding,
+    T: EncodableWith<E> + DecodableWith<E>,
+{
+    pub fn set(&self, storage: &mut impl StorageBackend, value: &T) -> Result<(), E::EncodeError> {
+        Ok(storage.set(self.namespace, &value.encode()?))
+    }
+
+    pub fn get(&self, storage: &impl StorageBackend) -> Result<Option<T>, E::DecodeError> {
+        storage
+            .get(self.namespace)
+            .map(|data| T::decode(&data))
+            .transpose()
+    }
+}
+
+impl<'ns, E: Encoding, T> Accessor<E> for ItemAccess<'ns, E, T> {
+    type Item = T;
 }

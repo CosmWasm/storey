@@ -2,8 +2,7 @@
 name = "stork"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+msrv = "1.65" # https://caniuse.rs/features/generic_associated_types
 
 [dev-dependencies]
 borsh = "1.2.1"
