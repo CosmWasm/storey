@@ -1,28 +1,44 @@
-use borsh::{BorshDeserialize, BorshSerialize};
 use stork::{DecodableWithImpl, EncodableWithImpl, Encoding};
 
-pub struct Borsh;
+pub struct TestEncoding;
 
-impl Encoding for Borsh {
-    type DecodeError = std::io::Error;
-    type EncodeError = std::io::Error;
+impl Encoding for TestEncoding {
+    type DecodeError = ();
+    type EncodeError = ();
 }
 
-impl<T> EncodableWithImpl<Borsh> for (&T,)
+impl<T> EncodableWithImpl<TestEncoding> for (&T,)
 where
-    T: BorshSerialize,
+    T: MyEncoding,
 {
-    fn encode_impl(self) -> Result<Vec<u8>, <Borsh as Encoding>::EncodeError> {
-        borsh::to_vec(self.0)
+    fn encode_impl(self) -> Result<Vec<u8>, <TestEncoding as Encoding>::EncodeError> {
+        self.0.my_encode()
     }
 }
 
-impl<T> DecodableWithImpl<Borsh> for (T,)
+impl<T> DecodableWithImpl<TestEncoding> for (T,)
 where
-    T: BorshDeserialize,
+    T: MyEncoding,
 {
-    fn decode_impl(data: &[u8]) -> Result<Self, <Borsh as Encoding>::DecodeError> {
-        let item = borsh::from_slice(data)?;
-        Ok((item,))
+    fn decode_impl(data: &[u8]) -> Result<Self, <TestEncoding as Encoding>::DecodeError> {
+        let value = T::my_decode(data)?;
+        Ok((value,))
+    }
+}
+
+trait MyEncoding: Sized {
+    fn my_encode(&self) -> Result<Vec<u8>, ()>;
+    fn my_decode(data: &[u8]) -> Result<Self, ()>;
+}
+
+impl MyEncoding for u64 {
+    fn my_encode(&self) -> Result<Vec<u8>, ()> {
+        Ok(self.to_le_bytes().to_vec())
+    }
+
+    fn my_decode(data: &[u8]) -> Result<Self, ()> {
+        let mut bytes = [0u8; 8];
+        bytes.copy_from_slice(data);
+        Ok(u64::from_le_bytes(bytes))
     }
 }
