@@ -2,7 +2,7 @@
 name = "stork"
 version = "0.1.0"
 edition = "2021"
-msrv = "1.65" # https://caniuse.rs/features/generic_associated_types
+rust-version = "1.65" # https://caniuse.rs/features/generic_associated_types
 
 [dev-dependencies]
 borsh = "1.2.1"
