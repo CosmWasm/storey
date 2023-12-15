@@ -1,7 +1,7 @@
 use cosmwasm_std::testing::MockStorage;
 use cosmwasm_std::Storage as _;
 
-struct TestStorage(MockStorage);
+pub struct TestStorage(MockStorage);
 
 impl TestStorage {
     pub fn new() -> Self {
