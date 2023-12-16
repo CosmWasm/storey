@@ -1,5 +1,12 @@
 use stork::{DecodableWithImpl, EncodableWithImpl, Encoding};
 
+// An implementation of an encoding used for tests.
+//
+// In a real-life scenario, implementers of `EncodableWith` and `DecodableWith`
+// will usually provide a blanket implementation that delegates to some third-party
+// serialization/deserialization trait. We're imitating this a little here to make
+// sure this process works.
+
 pub struct TestEncoding;
 
 impl Encoding for TestEncoding {
@@ -7,9 +14,12 @@ impl Encoding for TestEncoding {
     type EncodeError = ();
 }
 
+// This is how we would implement `EncodableWith` and `DecodableWith` for
+// `MyEncoding`, through a blanket implementation.
+
 impl<T> EncodableWithImpl<TestEncoding> for (&T,)
 where
-    T: MyEncoding,
+    T: MyTestEncoding,
 {
     fn encode_impl(self) -> Result<Vec<u8>, <TestEncoding as Encoding>::EncodeError> {
         self.0.my_encode()
@@ -18,7 +28,7 @@ where
 
 impl<T> DecodableWithImpl<TestEncoding> for (T,)
 where
-    T: MyEncoding,
+    T: MyTestEncoding,
 {
     fn decode_impl(data: &[u8]) -> Result<Self, <TestEncoding as Encoding>::DecodeError> {
         let value = T::my_decode(data)?;
@@ -26,12 +36,14 @@ where
     }
 }
 
-trait MyEncoding: Sized {
+// Imagine `MyTestEncoding` is a third-party trait that we don't control.
+
+trait MyTestEncoding: Sized {
     fn my_encode(&self) -> Result<Vec<u8>, ()>;
     fn my_decode(data: &[u8]) -> Result<Self, ()>;
 }
 
-impl MyEncoding for u64 {
+impl MyTestEncoding for u64 {
     fn my_encode(&self) -> Result<Vec<u8>, ()> {
         Ok(self.to_le_bytes().to_vec())
     }

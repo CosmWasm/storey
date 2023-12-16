@@ -19,9 +19,18 @@ pub trait StorageIterableBackend: StorageBackend {
     where
         Self: 'a;
 
-    fn keys<'a>(&'a self, start: Option<&[u8]>, end: Option<&[u8]>) -> Self::KeysIterator<'a>;
-    fn values<'a>(&'a self, start: Option<&[u8]>, end: Option<&[u8]>) -> Self::ValuesIterator<'a>;
-    fn pairs<'a>(&'a self, start: Option<&[u8]>, end: Option<&[u8]>) -> Self::PairsIterator<'a>;
+    fn keys<'a>(&'a self, start: Option<&'a [u8]>, end: Option<&'a [u8]>)
+        -> Self::KeysIterator<'a>;
+    fn values<'a>(
+        &'a self,
+        start: Option<&'a [u8]>,
+        end: Option<&'a [u8]>,
+    ) -> Self::ValuesIterator<'a>;
+    fn pairs<'a>(
+        &'a self,
+        start: Option<&'a [u8]>,
+        end: Option<&'a [u8]>,
+    ) -> Self::PairsIterator<'a>;
 }
 
 pub trait StorageRevIterableBackend: StorageBackend {
@@ -37,17 +46,17 @@ pub trait StorageRevIterableBackend: StorageBackend {
 
     fn rev_keys<'a>(
         &'a self,
-        start: Option<&[u8]>,
-        end: Option<&[u8]>,
+        start: Option<&'a [u8]>,
+        end: Option<&'a [u8]>,
     ) -> Self::RevKeysIterator<'a>;
     fn rev_values<'a>(
         &'a self,
-        start: Option<&[u8]>,
-        end: Option<&[u8]>,
+        start: Option<&'a [u8]>,
+        end: Option<&'a [u8]>,
     ) -> Self::RevValuesIterator<'a>;
     fn rev_pairs<'a>(
         &'a self,
-        start: Option<&[u8]>,
-        end: Option<&[u8]>,
+        start: Option<&'a [u8]>,
+        end: Option<&'a [u8]>,
     ) -> Self::RevPairsIterator<'a>;
 }
