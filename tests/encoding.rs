@@ -1,16 +1,13 @@
-use stork::{DecodableWith as _, EncodableWith as _};
-
 mod common;
+
+use stork::{DecodableWith as _, EncodableWith as _};
 
 #[test]
 fn encoding() {
-    let data = 12u64.encode().unwrap();
-    assert_eq!(data, vec![12, 0, 0, 0, 0, 0, 0, 0]);
+    assert_eq!(12u64.encode(), Ok(12u64.to_le_bytes().to_vec()));
 }
 
 #[test]
 fn decoding() {
-    let data = vec![12, 0, 0, 0, 0, 0, 0, 0];
-    let item = <u64>::decode(&data).unwrap();
-    assert_eq!(item, 12);
+    assert_eq!(<u64>::decode(&12u64.to_le_bytes()), Ok(12));
 }

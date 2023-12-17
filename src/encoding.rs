@@ -1,9 +1,11 @@
+// TODO: Explain all this. There's a bit much going on here.
+
 pub trait Encoding {
     type EncodeError;
     type DecodeError;
 }
 
-pub trait EncodableWith<E: Encoding>: _sealed::SealedE<E> {
+pub trait EncodableWith<E: Encoding>: sealed::SealedE<E> {
     fn encode(&self) -> Result<Vec<u8>, E::EncodeError>;
 }
 
@@ -20,7 +22,7 @@ where
     }
 }
 
-pub trait DecodableWith<E: Encoding>: Sized + _sealed::SealedD<E> {
+pub trait DecodableWith<E: Encoding>: Sized + sealed::SealedD<E> {
     fn decode(data: &[u8]) -> Result<Self, E::DecodeError>;
 }
 
@@ -38,7 +40,7 @@ where
     }
 }
 
-mod _sealed {
+mod sealed {
     use super::*;
 
     pub trait SealedE<E> {}
