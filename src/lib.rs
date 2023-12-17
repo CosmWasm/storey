@@ -1,5 +1,5 @@
 mod backend;
-mod containers;
+pub mod containers;
 mod encoding;
 
 pub use backend::{StorageBackend, StorageIterableBackend, StorageRevIterableBackend};

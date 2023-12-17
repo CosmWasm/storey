@@ -1,9 +1,11 @@
+pub mod item;
+
+pub use item::NonNullItem;
+
 use crate::{
     backend::StorageBackend,
     encoding::{DecodableWith, EncodableWith, Encoding},
 };
-
-mod item;
 
 pub trait Container<E: Encoding> {
     type AccessorT<'ns>: Accessor<E, Item = Self::Item>
@@ -12,7 +14,7 @@ pub trait Container<E: Encoding> {
         Self::Item: 'ns;
     type Item: EncodableWith<E> + DecodableWith<E>;
 
-    fn init(ns: &[u8], _storage: &mut impl StorageBackend) -> Result<(), E::EncodeError> {
+    fn init(_ns: &[u8], _storage: &mut impl StorageBackend) -> Result<(), E::EncodeError> {
         Ok(())
     }
 
