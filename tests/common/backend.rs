@@ -1,8 +1,4 @@
-use std::collections::{btree_map, BTreeMap};
-use std::iter::Cloned;
-
-use cosmwasm_std::testing::MockStorage;
-use cosmwasm_std::Storage as _;
+use std::collections::BTreeMap;
 
 pub struct TestStorage(BTreeMap<Vec<u8>, Vec<u8>>);
 
