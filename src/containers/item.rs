@@ -1,8 +1,7 @@
 use std::marker::PhantomData;
 
 use crate::backend::StorageBackend;
-use crate::encoding::Encoding;
-use crate::{DecodableWith, EncodableWith};
+use crate::encoding::{DecodableWith, EncodableWith, Encoding};
 
 use super::{Accessor, Container};
 

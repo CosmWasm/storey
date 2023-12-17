@@ -1,4 +1,4 @@
-use stork::{DecodableWithImpl, EncodableWithImpl, Encoding};
+use stork::encoding::{DecodableWithImpl, EncodableWithImpl, Encoding};
 
 // An implementation of an encoding used for tests.
 //
