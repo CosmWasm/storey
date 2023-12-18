@@ -11,9 +11,11 @@ pub trait Encoding {
 ///
 /// # Implementing `EncodableWith`
 ///
-/// The trait is sealed, so you can't implement it directly. Instead of implementing
+/// The trait is [sealed], so you can't implement it directly. Instead of implementing
 /// [`EncodableWith`] for `T`, you should implement [`EncodableWithImpl`] for `(&T,)`.
 /// See the documentation for [`EncodableWithImpl`] for an example.
+///
+/// [sealed]: https://rust-lang.github.io/api-guidelines/future-proofing.html#sealed-traits-protect-against-downstream-implementations-c-sealed
 pub trait EncodableWith<E: Encoding>: sealed::SealedE<E> {
     fn encode(&self) -> Result<Vec<u8>, E::EncodeError>;
 }
@@ -75,9 +77,11 @@ where
 ///
 /// # Implementing `DecodableWith`
 ///
-/// The trait is sealed, so you can't implement it directly. Instead of implementing
+/// The trait is [sealed], so you can't implement it directly. Instead of implementing
 /// [`DecodableWith`] for `T`, you should implement [`DecodableWithImpl`] for `(T,)`.
 /// See the documentation for [`DecodableWithImpl`] for an example.
+///
+/// [sealed]: https://rust-lang.github.io/api-guidelines/future-proofing.html#sealed-traits-protect-against-downstream-implementations-c-sealed
 pub trait DecodableWith<E: Encoding>: Sized + sealed::SealedD<E> {
     fn decode(data: &[u8]) -> Result<Self, E::DecodeError>;
 }
@@ -139,6 +143,14 @@ where
 }
 
 mod sealed {
+    // This module is private to the crate. It's used to seal the `EncodableWith` and
+    // `DecodableWith` traits, so that the only way they can be implemented outside
+    // this crate is through the blanket implementations provided by `EncodableWithImpl`
+    // and `DecodableWithImpl`.
+    //
+    // More information on sealed traits:
+    // https://rust-lang.github.io/api-guidelines/future-proofing.html#sealed-traits-protect-against-downstream-implementations-c-sealed
+
     use super::*;
 
     pub trait SealedE<E> {}
