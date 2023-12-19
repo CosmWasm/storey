@@ -66,10 +66,10 @@ pub trait EncodableWithImpl<E: Encoding> {
 
 impl<E: Encoding, T> EncodableWith<E> for T
 where
-    for<'a> (&'a T,): EncodableWithImpl<E>,
+    for<'a> Wrapper<&'a T>: EncodableWithImpl<E>,
 {
     fn encode(&self) -> Result<Vec<u8>, <E as Encoding>::EncodeError> {
-        (self,).encode_impl()
+        Wrapper(self).encode_impl()
     }
 }
 
@@ -134,11 +134,11 @@ pub trait DecodableWithImpl<E: Encoding>: Sized {
 
 impl<E: Encoding, T> DecodableWith<E> for T
 where
-    (T,): DecodableWithImpl<E>,
+    Wrapper<T>: DecodableWithImpl<E>,
 {
     fn decode(data: &[u8]) -> Result<Self, <E as Encoding>::DecodeError> {
-        let tuple = <(Self,)>::decode_impl(data)?;
-        Ok(tuple.0)
+        let wrapper = <Wrapper<Self>>::decode_impl(data)?;
+        Ok(wrapper.0)
     }
 }
 
@@ -156,6 +156,8 @@ mod sealed {
     pub trait SealedE<E> {}
     pub trait SealedD<E> {}
 
-    impl<E: Encoding, T> SealedE<E> for T where for<'a> (&'a T,): EncodableWithImpl<E> {}
-    impl<E: Encoding, T> SealedD<E> for T where (T,): DecodableWithImpl<E> {}
+    impl<E: Encoding, T> SealedE<E> for T where for<'a> Wrapper<&'a T>: EncodableWithImpl<E> {}
+    impl<E: Encoding, T> SealedD<E> for T where Wrapper<T>: DecodableWithImpl<E> {}
 }
+
+pub struct Wrapper<T>(pub T);

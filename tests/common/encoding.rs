@@ -1,4 +1,4 @@
-use stork::encoding::{DecodableWithImpl, EncodableWithImpl, Encoding};
+use stork::encoding::{DecodableWithImpl, EncodableWithImpl, Encoding, Wrapper};
 
 // An implementation of an encoding used for tests.
 //
@@ -17,7 +17,7 @@ impl Encoding for TestEncoding {
 // This is how we would implement `EncodableWith` and `DecodableWith` for
 // `MyEncoding`, through a blanket implementation.
 
-impl<T> EncodableWithImpl<TestEncoding> for (&T,)
+impl<T> EncodableWithImpl<TestEncoding> for Wrapper<&T>
 where
     T: MyTestEncoding,
 {
@@ -26,13 +26,13 @@ where
     }
 }
 
-impl<T> DecodableWithImpl<TestEncoding> for (T,)
+impl<T> DecodableWithImpl<TestEncoding> for Wrapper<T>
 where
     T: MyTestEncoding,
 {
     fn decode_impl(data: &[u8]) -> Result<Self, <TestEncoding as Encoding>::DecodeError> {
         let value = T::my_decode(data)?;
-        Ok((value,))
+        Ok(Wrapper(value))
     }
 }
 
