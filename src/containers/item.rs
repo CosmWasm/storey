@@ -55,7 +55,7 @@ where
         Ok(storage.set(self.namespace, &value.encode()?))
     }
 
-    pub fn qget(&self, storage: &impl StorageBackend) -> Result<Option<T>, E::DecodeError> {
+    pub fn get(&self, storage: &impl StorageBackend) -> Result<Option<T>, E::DecodeError> {
         storage
             .get(self.namespace)
             .map(|data| T::decode(&data))
