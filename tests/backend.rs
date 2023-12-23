@@ -6,7 +6,7 @@ fn storage_backend() {
 
     use stork::{StorageBackend as _, StorageIterableBackend as _, StorageRevIterableBackend as _};
 
-    let mut storage = common::backend::TestStorage::new();
+    let storage = common::backend::TestStorage::new();
 
     storage.set(&[0], b"bar");
     storage.set(&[1], b"baz");

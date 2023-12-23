@@ -1,7 +1,7 @@
 pub trait StorageBackend {
     fn get(&self, key: &[u8]) -> Option<Vec<u8>>;
-    fn set(&mut self, key: &[u8], value: &[u8]);
-    fn remove(&mut self, key: &[u8]);
+    fn set(&self, key: &[u8], value: &[u8]);
+    fn remove(&self, key: &[u8]);
 
     fn has(&self, key: &[u8]) -> bool {
         self.get(key).is_some()

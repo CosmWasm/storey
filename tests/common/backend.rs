@@ -1,26 +1,36 @@
-use std::collections::BTreeMap;
+use std::{cell::UnsafeCell, collections::BTreeMap};
 
 use stork::StorageIterableBackend as _;
 
-pub struct TestStorage(BTreeMap<Vec<u8>, Vec<u8>>);
+pub struct TestStorage(UnsafeCell<BTreeMap<Vec<u8>, Vec<u8>>>);
 
 impl TestStorage {
     pub fn new() -> Self {
-        Self(BTreeMap::new())
+        Self(UnsafeCell::new(BTreeMap::new()))
     }
 }
 
+// Safety: in each of the following methods, we drop the reference to the BTreeMap
+// before the function returns, so we can guarantee that no two references exist
+// at the same time.
+//
+// Moreover, we can further guarantee that the dereference is valid because the data
+// is always initialized during construction.
 impl stork::StorageBackend for TestStorage {
     fn get(&self, key: &[u8]) -> Option<Vec<u8>> {
-        self.0.get(key).map(|v| v.clone())
+        unsafe { (&*self.0.get()).get(key).map(|v| v.clone()) }
     }
 
-    fn set(&mut self, key: &[u8], value: &[u8]) {
-        self.0.insert(key.to_vec(), value.to_vec());
+    fn set(&self, key: &[u8], value: &[u8]) {
+        unsafe {
+            (&mut *self.0.get()).insert(key.to_vec(), value.to_vec());
+        }
     }
 
-    fn remove(&mut self, key: &[u8]) {
-        self.0.remove(key);
+    fn remove(&self, key: &[u8]) {
+        unsafe {
+            (&mut *self.0.get()).remove(key);
+        }
     }
 }
 
@@ -35,10 +45,11 @@ impl stork::StorageIterableBackend for TestStorage {
         end: Option<&'a [u8]>,
     ) -> Self::KeysIterator<'a> {
         Box::new(
-            self.0
-                .keys()
-                .filter(move |k| check_bounds(k, start, end))
-                .cloned(),
+            unsafe { &*self.0.get() }
+                .clone()
+                .into_iter()
+                .filter(move |(k, _)| check_bounds(k, start, end))
+                .map(|(k, _)| k),
         )
     }
 
@@ -48,10 +59,11 @@ impl stork::StorageIterableBackend for TestStorage {
         end: Option<&'a [u8]>,
     ) -> Self::ValuesIterator<'a> {
         Box::new(
-            self.0
-                .iter()
+            unsafe { &*self.0.get() }
+                .clone()
+                .into_iter()
                 .filter(move |(k, _)| check_bounds(k, start, end))
-                .map(|(_, v)| v.clone()),
+                .map(|(_, v)| v),
         )
     }
 
@@ -61,7 +73,7 @@ impl stork::StorageIterableBackend for TestStorage {
         end: Option<&'a [u8]>,
     ) -> Self::PairsIterator<'a> {
         Box::new(
-            self.0
+            unsafe { &*self.0.get() }
                 .clone()
                 .into_iter()
                 .filter(move |(k, _)| check_bounds(k, start, end)),

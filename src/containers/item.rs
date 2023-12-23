@@ -29,7 +29,7 @@ where
     type Item = T;
     type AccessorT<'ns> = ItemAccess<'ns, E, T> where E:'ns, T:'ns;
 
-    fn init(ns: &[u8], storage: &mut impl StorageBackend) -> Result<(), E::EncodeError> {
+    fn init(ns: &[u8], storage: &impl StorageBackend) -> Result<(), E::EncodeError> {
         Self::access(ns).set(storage, &T::default())
     }
 
@@ -51,7 +51,7 @@ where
     E: Encoding,
     T: EncodableWith<E> + DecodableWith<E>,
 {
-    pub fn set(&self, storage: &mut impl StorageBackend, value: &T) -> Result<(), E::EncodeError> {
+    pub fn set(&self, storage: &impl StorageBackend, value: &T) -> Result<(), E::EncodeError> {
         Ok(storage.set(self.namespace, &value.encode()?))
     }
 
