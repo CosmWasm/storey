@@ -45,8 +45,7 @@ impl stork::StorageIterableBackend for TestStorage {
         end: Option<&'a [u8]>,
     ) -> Self::KeysIterator<'a> {
         Box::new(
-            unsafe { &*self.0.get() }
-                .clone()
+            unsafe { (&*self.0.get()).clone() }
                 .into_iter()
                 .filter(move |(k, _)| check_bounds(k, start, end))
                 .map(|(k, _)| k),
@@ -59,8 +58,7 @@ impl stork::StorageIterableBackend for TestStorage {
         end: Option<&'a [u8]>,
     ) -> Self::ValuesIterator<'a> {
         Box::new(
-            unsafe { &*self.0.get() }
-                .clone()
+            unsafe { (&*self.0.get()).clone() }
                 .into_iter()
                 .filter(move |(k, _)| check_bounds(k, start, end))
                 .map(|(_, v)| v),
@@ -73,8 +71,7 @@ impl stork::StorageIterableBackend for TestStorage {
         end: Option<&'a [u8]>,
     ) -> Self::PairsIterator<'a> {
         Box::new(
-            unsafe { &*self.0.get() }
-                .clone()
+            unsafe { (&*self.0.get()).clone() }
                 .into_iter()
                 .filter(move |(k, _)| check_bounds(k, start, end)),
         )
