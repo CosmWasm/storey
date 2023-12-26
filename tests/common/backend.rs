@@ -2,6 +2,14 @@ use std::{cell::UnsafeCell, collections::BTreeMap};
 
 use stork::StorageIterableBackend as _;
 
+// `UnsafeCell` is needed here to implement interior mutability.
+// https://doc.rust-lang.org/book/ch15-05-interior-mutability.html
+//
+// We could play it safe and use `RefCell` instead, but we really don't need
+// the extra bookkeeping. We're not trying to push borrow rules for the inner
+// `BTreeMap` to runtime; we guarantee memory safety around aliasing at compile
+// time.
+
 pub struct TestStorage(UnsafeCell<BTreeMap<Vec<u8>, Vec<u8>>>);
 
 impl TestStorage {
@@ -10,24 +18,28 @@ impl TestStorage {
     }
 }
 
-// Safety: in each of the following methods, we drop the reference to the BTreeMap
-// before the function returns, so we can guarantee that no two references exist
-// at the same time.
+// Safety: in each of the unsafe blocks in this file, we drop the reference to
+// the BTreeMap before the function returns, so we can guarantee that no two references
+// to it exist at the same time.
 //
 // Moreover, we can further guarantee that the dereference is valid because the data
 // is always initialized during construction.
+
 impl stork::StorageBackend for TestStorage {
     fn get(&self, key: &[u8]) -> Option<Vec<u8>> {
+        // Safety: see above
         unsafe { (&*self.0.get()).get(key).map(|v| v.clone()) }
     }
 
     fn set(&self, key: &[u8], value: &[u8]) {
+        // Safety: see above
         unsafe {
             (&mut *self.0.get()).insert(key.to_vec(), value.to_vec());
         }
     }
 
     fn remove(&self, key: &[u8]) {
+        // Safety: see above
         unsafe {
             (&mut *self.0.get()).remove(key);
         }
@@ -45,6 +57,7 @@ impl stork::StorageIterableBackend for TestStorage {
         end: Option<&'a [u8]>,
     ) -> Self::KeysIterator<'a> {
         Box::new(
+            // Safety: see above
             unsafe { (&*self.0.get()).clone() }
                 .into_iter()
                 .filter(move |(k, _)| check_bounds(k, start, end))
@@ -58,6 +71,7 @@ impl stork::StorageIterableBackend for TestStorage {
         end: Option<&'a [u8]>,
     ) -> Self::ValuesIterator<'a> {
         Box::new(
+            // Safety: see above
             unsafe { (&*self.0.get()).clone() }
                 .into_iter()
                 .filter(move |(k, _)| check_bounds(k, start, end))
@@ -71,6 +85,7 @@ impl stork::StorageIterableBackend for TestStorage {
         end: Option<&'a [u8]>,
     ) -> Self::PairsIterator<'a> {
         Box::new(
+            // Safety: see above
             unsafe { (&*self.0.get()).clone() }
                 .into_iter()
                 .filter(move |(k, _)| check_bounds(k, start, end)),
