@@ -2,7 +2,7 @@ use std::{borrow::Cow, marker::PhantomData};
 
 use crate::encoding::Encoding;
 
-use super::{Accessor, Key, Storable};
+use super::{Key, Storable};
 
 pub struct Map<K: ?Sized, V, E> {
     prefix: &'static [u8],
@@ -61,5 +61,3 @@ where
         V::access_impl(key)
     }
 }
-
-impl<K: ?Sized, V, E> Accessor for MapAccess<'_, K, V, E> {}

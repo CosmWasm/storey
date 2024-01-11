@@ -6,7 +6,7 @@ use crate::{
     StorageBackend, StorageBackendMut,
 };
 
-use super::{Accessor, Storable};
+use super::Storable;
 
 pub struct Item<T, E> {
     prefix: &'static [u8],
@@ -68,5 +68,3 @@ where
         Ok(())
     }
 }
-
-impl<E, T> Accessor for ItemAccess<'_, E, T> {}
