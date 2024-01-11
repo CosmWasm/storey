@@ -30,7 +30,9 @@ impl stork::StorageBackend for TestStorage {
         // Safety: see above
         unsafe { (&*self.0.get()).get(key).map(|v| v.clone()) }
     }
+}
 
+impl stork::StorageBackendMut for TestStorage {
     fn set(&self, key: &[u8], value: &[u8]) {
         // Safety: see above
         unsafe {
