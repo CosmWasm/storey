@@ -1,6 +1,7 @@
 use std::borrow::{Borrow, Cow};
 use std::marker::PhantomData;
 
+use crate::storage_branch::StorageBranch;
 use crate::{
     encoding::{DecodableWith, EncodableWith, Encoding},
     StorageBackend, StorageBackendMut,
@@ -25,8 +26,11 @@ where
         }
     }
 
-    pub fn access(&self) -> ItemAccess<'static, E, T> {
-        Self::access_impl(self.prefix)
+    pub fn access<'s, S: StorageBackend + 's>(
+        &self,
+        storage: &'s S,
+    ) -> ItemAccess<E, T, StorageBranch<'s, S>> {
+        Self::access_impl(storage.branch(self.prefix.to_vec()))
     }
 }
 
@@ -35,36 +39,44 @@ where
     E: Encoding,
     T: EncodableWith<E> + DecodableWith<E>,
 {
-    type AccessorT<'ns> = ItemAccess<'ns, E, T>;
+    type AccessorT<S> = ItemAccess<E, T, S>;
 
-    fn access_impl<'k>(prefix: impl Into<Cow<'k, [u8]>>) -> ItemAccess<'k, E, T> {
+    fn access_impl<S>(storage: S) -> ItemAccess<E, T, S> {
         ItemAccess {
-            prefix: prefix.into(),
+            storage,
             phantom: PhantomData,
         }
     }
 }
 
-pub struct ItemAccess<'k, E, T> {
-    prefix: Cow<'k, [u8]>,
+pub struct ItemAccess<E, T, S> {
+    storage: S,
     phantom: PhantomData<(E, T)>,
 }
 
-impl<E, T> ItemAccess<'_, E, T>
+impl<E, T, S> ItemAccess<E, T, S>
 where
     E: Encoding,
     T: EncodableWith<E> + DecodableWith<E>,
+    S: StorageBackend,
 {
-    pub fn get(&self, storage: &impl StorageBackend) -> Result<Option<T>, E::DecodeError> {
-        storage
-            .get(self.prefix.borrow())
-            .map(|bytes| T::decode(bytes.as_slice()))
+    pub fn get(&self) -> Result<Option<T>, E::DecodeError> {
+        self.storage
+            .get(&[])
+            .map(|bytes| T::decode(&bytes))
             .transpose()
     }
+}
 
-    pub fn set(&self, storage: &impl StorageBackendMut, value: &T) -> Result<(), E::EncodeError> {
+impl<E, T, S> ItemAccess<E, T, S>
+where
+    E: Encoding,
+    T: EncodableWith<E> + DecodableWith<E>,
+    S: StorageBackendMut,
+{
+    pub fn set(&self, value: &T) -> Result<(), E::EncodeError> {
         let bytes = value.encode()?;
-        storage.set(self.prefix.borrow(), &bytes);
+        self.storage.set(&[], &bytes);
         Ok(())
     }
 }

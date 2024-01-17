@@ -9,9 +9,9 @@ use std::borrow::Cow;
 use crate::encoding::Encoding;
 
 pub trait Storable<E: Encoding> {
-    type AccessorT<'ns>;
+    type AccessorT<S>;
 
-    fn access_impl<'k>(prefix: impl Into<Cow<'k, [u8]>>) -> Self::AccessorT<'k>;
+    fn access_impl<S>(storage: S) -> Self::AccessorT<S>;
 }
 
 pub trait Collection {

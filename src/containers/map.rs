@@ -1,6 +1,6 @@
 use std::{borrow::Cow, marker::PhantomData};
 
-use crate::encoding::Encoding;
+use crate::{encoding::Encoding, storage_branch::StorageBranch, StorageBackend};
 
 use super::{Key, Storable};
 
@@ -22,8 +22,11 @@ where
         }
     }
 
-    pub fn access(&self) -> MapAccess<'static, K, V, E> {
-        Self::access_impl(self.prefix)
+    pub fn access<'s, S: StorageBackend + 's>(
+        &self,
+        storage: &'s S,
+    ) -> MapAccess<K, V, E, StorageBranch<'s, S>> {
+        Self::access_impl(storage.branch(self.prefix.to_vec()))
     }
 }
 
@@ -33,31 +36,30 @@ where
     E: Encoding,
     V: Storable<E>,
 {
-    type AccessorT<'ns> = MapAccess<'ns, K, V, E>;
+    type AccessorT<S> = MapAccess<K, V, E, S>;
 
-    fn access_impl<'k>(prefix: impl Into<Cow<'k, [u8]>>) -> MapAccess<'k, K, V, E> {
+    fn access_impl<S>(storage: S) -> MapAccess<K, V, E, S> {
         MapAccess {
-            namespace: prefix.into(),
+            storage,
             phantom: PhantomData,
         }
     }
 }
 
-pub struct MapAccess<'k, K: ?Sized, V, E> {
-    namespace: Cow<'k, [u8]>,
+pub struct MapAccess<K: ?Sized, V, E, S> {
+    storage: S,
     phantom: PhantomData<(*const K, V, E)>,
 }
 
-impl<K, V, E> MapAccess<'_, K, V, E>
+impl<K, V, E, S> MapAccess<K, V, E, S>
 where
     E: Encoding,
     K: Key + ?Sized,
     V: Storable<E>,
+    S: StorageBackend,
 {
-    pub fn get<'k>(&self, key: &'k K) -> V::AccessorT<'k> {
+    pub fn get<'s>(&'s self, key: &K) -> V::AccessorT<StorageBranch<'s, S>> {
         let key = key.bytes();
-        // TODO: length prefix
-        let key = [&self.namespace, key].concat();
-        V::access_impl(key)
+        V::access_impl(self.storage.branch(key.to_vec()))
     }
 }
