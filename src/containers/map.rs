@@ -1,19 +1,18 @@
-use std::{borrow::Cow, marker::PhantomData};
+use std::marker::PhantomData;
 
-use crate::{encoding::Encoding, storage_branch::StorageBranch, StorageBackend};
+use crate::{storage_branch::StorageBranch, StorageBackend};
 
 use super::{Key, Storable};
 
-pub struct Map<K: ?Sized, V, E> {
+pub struct Map<K: ?Sized, V> {
     prefix: &'static [u8],
-    phantom: PhantomData<(*const K, V, E)>,
+    phantom: PhantomData<(*const K, V)>,
 }
 
-impl<K, V, E> Map<K, V, E>
+impl<K, V> Map<K, V>
 where
     K: ?Sized,
-    E: Encoding,
-    V: Storable<E>,
+    V: Storable,
 {
     pub const fn new(prefix: &'static [u8]) -> Self {
         Self {
@@ -25,20 +24,19 @@ where
     pub fn access<'s, S: StorageBackend + 's>(
         &self,
         storage: &'s S,
-    ) -> MapAccess<K, V, E, StorageBranch<'s, S>> {
+    ) -> MapAccess<K, V, StorageBranch<'s, S>> {
         Self::access_impl(storage.branch(self.prefix.to_vec()))
     }
 }
 
-impl<K, V, E> Storable<E> for Map<K, V, E>
+impl<K, V> Storable for Map<K, V>
 where
     K: ?Sized,
-    E: Encoding,
-    V: Storable<E>,
+    V: Storable,
 {
-    type AccessorT<S> = MapAccess<K, V, E, S>;
+    type AccessorT<S> = MapAccess<K, V, S>;
 
-    fn access_impl<S>(storage: S) -> MapAccess<K, V, E, S> {
+    fn access_impl<S>(storage: S) -> MapAccess<K, V, S> {
         MapAccess {
             storage,
             phantom: PhantomData,
@@ -46,16 +44,15 @@ where
     }
 }
 
-pub struct MapAccess<K: ?Sized, V, E, S> {
+pub struct MapAccess<K: ?Sized, V, S> {
     storage: S,
-    phantom: PhantomData<(*const K, V, E)>,
+    phantom: PhantomData<(*const K, V)>,
 }
 
-impl<K, V, E, S> MapAccess<K, V, E, S>
+impl<K, V, S> MapAccess<K, V, S>
 where
-    E: Encoding,
     K: Key + ?Sized,
-    V: Storable<E>,
+    V: Storable,
     S: StorageBackend,
 {
     pub fn get<'s>(&'s self, key: &K) -> V::AccessorT<StorageBranch<'s, S>> {

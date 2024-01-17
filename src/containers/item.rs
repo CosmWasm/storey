@@ -1,4 +1,3 @@
-use std::borrow::{Borrow, Cow};
 use std::marker::PhantomData;
 
 use crate::storage_branch::StorageBranch;
@@ -34,7 +33,7 @@ where
     }
 }
 
-impl<T, E> Storable<E> for Item<T, E>
+impl<T, E> Storable for Item<T, E>
 where
     E: Encoding,
     T: EncodableWith<E> + DecodableWith<E>,

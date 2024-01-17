@@ -27,7 +27,7 @@ fn item() {
 fn map() {
     let storage = TestStorage::new();
 
-    let map = Map::<str, Item<u64, TestEncoding>, TestEncoding>::new(&[0]);
+    let map = Map::<str, Item<u64, TestEncoding>>::new(&[0]);
     let access = map.access(&storage);
 
     access.get("foo").set(&1337).unwrap();
@@ -44,7 +44,7 @@ fn map() {
 fn map_of_map() {
     let storage = TestStorage::new();
 
-    let map = Map::<str, Map<str, Item<u64, TestEncoding>, TestEncoding>, TestEncoding>::new(&[0]);
+    let map = Map::<str, Map<str, Item<u64, TestEncoding>>>::new(&[0]);
 
     map.access(&storage)
         .get("foo")
