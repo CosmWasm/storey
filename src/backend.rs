@@ -1,17 +1,8 @@
-use crate::storage_branch::StorageBranch;
-
 pub trait StorageBackend {
     fn get(&self, key: &[u8]) -> Option<Vec<u8>>;
 
     fn has(&self, key: &[u8]) -> bool {
         self.get(key).is_some()
-    }
-
-    fn branch(&self, prefix: Vec<u8>) -> StorageBranch<Self>
-    where
-        Self: Sized,
-    {
-        StorageBranch::new(self, prefix)
     }
 }
 

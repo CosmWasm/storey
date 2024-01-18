@@ -25,7 +25,7 @@ where
         &self,
         storage: &'s S,
     ) -> MapAccess<K, V, StorageBranch<'s, S>> {
-        Self::access_impl(storage.branch(self.prefix.to_vec()))
+        Self::access_impl(StorageBranch::new(storage, self.prefix.to_vec()))
     }
 }
 
@@ -57,6 +57,6 @@ where
 {
     pub fn get<'s>(&'s self, key: &K) -> V::AccessorT<StorageBranch<'s, S>> {
         let key = key.bytes();
-        V::access_impl(self.storage.branch(key.to_vec()))
+        V::access_impl(StorageBranch::new(&self.storage, key.to_vec()))
     }
 }

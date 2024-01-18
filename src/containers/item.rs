@@ -29,7 +29,7 @@ where
         &self,
         storage: &'s S,
     ) -> ItemAccess<E, T, StorageBranch<'s, S>> {
-        Self::access_impl(storage.branch(self.prefix.to_vec()))
+        Self::access_impl(StorageBranch::new(storage, self.prefix.to_vec()))
     }
 }
 
