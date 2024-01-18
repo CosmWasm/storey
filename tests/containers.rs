@@ -1,7 +1,7 @@
 mod common;
 
 use stork::containers::{Item, Map};
-use stork::StorageBackend as _;
+use stork::Storage as _;
 
 use common::backend::TestStorage;
 use common::encoding::TestEncoding;

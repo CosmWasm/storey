@@ -1,8 +1,6 @@
-mod backend;
+mod bin_storage;
 pub mod containers;
 pub mod encoding;
 pub mod storage_branch;
 
-pub use backend::{
-    StorageBackend, StorageBackendMut, StorageIterableBackend, StorageRevIterableBackend,
-};
+pub use bin_storage::{IterableStorage, RevIterableStorage, Storage, StorageMut};

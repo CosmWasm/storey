@@ -4,9 +4,7 @@ mod common;
 fn storage_backend() {
     // TODO: split this into multiple tests
 
-    use stork::{
-        StorageBackendMut as _, StorageIterableBackend as _, StorageRevIterableBackend as _,
-    };
+    use stork::{IterableStorage as _, RevIterableStorage as _, StorageMut as _};
 
     let storage = common::backend::TestStorage::new();
 

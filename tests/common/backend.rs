@@ -1,6 +1,6 @@
 use std::{cell::UnsafeCell, collections::BTreeMap};
 
-use stork::StorageIterableBackend as _;
+use stork::IterableStorage as _;
 
 // `UnsafeCell` is needed here to implement interior mutability.
 // https://doc.rust-lang.org/book/ch15-05-interior-mutability.html
@@ -25,14 +25,14 @@ impl TestStorage {
 // Moreover, we can further guarantee that the dereference is valid because the data
 // is always initialized during construction.
 
-impl stork::StorageBackend for TestStorage {
+impl stork::Storage for TestStorage {
     fn get(&self, key: &[u8]) -> Option<Vec<u8>> {
         // Safety: see above
         unsafe { (&*self.0.get()).get(key).map(|v| v.clone()) }
     }
 }
 
-impl stork::StorageBackendMut for TestStorage {
+impl stork::StorageMut for TestStorage {
     fn set(&self, key: &[u8], value: &[u8]) {
         // Safety: see above
         unsafe {
@@ -48,7 +48,7 @@ impl stork::StorageBackendMut for TestStorage {
     }
 }
 
-impl stork::StorageIterableBackend for TestStorage {
+impl stork::IterableStorage for TestStorage {
     type KeysIterator<'a> = Box<dyn DoubleEndedIterator<Item = Vec<u8>> + 'a>;
     type ValuesIterator<'a> = Box<dyn DoubleEndedIterator<Item = Vec<u8>> + 'a>;
     type PairsIterator<'a> = Box<dyn DoubleEndedIterator<Item = (Vec<u8>, Vec<u8>)> + 'a>;
@@ -95,7 +95,7 @@ impl stork::StorageIterableBackend for TestStorage {
     }
 }
 
-impl stork::StorageRevIterableBackend for TestStorage {
+impl stork::RevIterableStorage for TestStorage {
     type RevKeysIterator<'a> = Box<dyn Iterator<Item = Vec<u8>> + 'a>;
     type RevValuesIterator<'a> = Box<dyn Iterator<Item = Vec<u8>> + 'a>;
     type RevPairsIterator<'a> = Box<dyn Iterator<Item = (Vec<u8>, Vec<u8>)> + 'a>;

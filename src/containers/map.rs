@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use crate::{storage_branch::StorageBranch, StorageBackend};
+use crate::{storage_branch::StorageBranch, Storage};
 
 use super::{Key, Storable};
 
@@ -21,7 +21,7 @@ where
         }
     }
 
-    pub fn access<'s, S: StorageBackend + 's>(
+    pub fn access<'s, S: Storage + 's>(
         &self,
         storage: &'s S,
     ) -> MapAccess<K, V, StorageBranch<'s, S>> {
@@ -53,7 +53,7 @@ impl<K, V, S> MapAccess<K, V, S>
 where
     K: Key + ?Sized,
     V: Storable,
-    S: StorageBackend,
+    S: Storage,
 {
     pub fn get<'s>(&'s self, key: &K) -> V::AccessorT<StorageBranch<'s, S>> {
         let key = key.bytes();

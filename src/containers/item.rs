@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use crate::storage_branch::StorageBranch;
 use crate::{
     encoding::{DecodableWith, EncodableWith, Encoding},
-    StorageBackend, StorageBackendMut,
+    Storage, StorageMut,
 };
 
 use super::Storable;
@@ -25,7 +25,7 @@ where
         }
     }
 
-    pub fn access<'s, S: StorageBackend + 's>(
+    pub fn access<'s, S: Storage + 's>(
         &self,
         storage: &'s S,
     ) -> ItemAccess<E, T, StorageBranch<'s, S>> {
@@ -57,7 +57,7 @@ impl<E, T, S> ItemAccess<E, T, S>
 where
     E: Encoding,
     T: EncodableWith<E> + DecodableWith<E>,
-    S: StorageBackend,
+    S: Storage,
 {
     pub fn get(&self) -> Result<Option<T>, E::DecodeError> {
         self.storage
@@ -71,7 +71,7 @@ impl<E, T, S> ItemAccess<E, T, S>
 where
     E: Encoding,
     T: EncodableWith<E> + DecodableWith<E>,
-    S: StorageBackendMut,
+    S: StorageMut,
 {
     pub fn set(&self, value: &T) -> Result<(), E::EncodeError> {
         let bytes = value.encode()?;

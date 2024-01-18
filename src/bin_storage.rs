@@ -1,4 +1,4 @@
-pub trait StorageBackend {
+pub trait Storage {
     fn get(&self, key: &[u8]) -> Option<Vec<u8>>;
 
     fn has(&self, key: &[u8]) -> bool {
@@ -6,12 +6,12 @@ pub trait StorageBackend {
     }
 }
 
-pub trait StorageBackendMut {
+pub trait StorageMut {
     fn set(&self, key: &[u8], value: &[u8]);
     fn remove(&self, key: &[u8]);
 }
 
-pub trait StorageIterableBackend {
+pub trait IterableStorage {
     type KeysIterator<'a>: Iterator<Item = Vec<u8>>
     where
         Self: 'a;
@@ -36,7 +36,7 @@ pub trait StorageIterableBackend {
     ) -> Self::PairsIterator<'a>;
 }
 
-pub trait StorageRevIterableBackend {
+pub trait RevIterableStorage {
     type RevKeysIterator<'a>: Iterator<Item = Vec<u8>>
     where
         Self: 'a;
