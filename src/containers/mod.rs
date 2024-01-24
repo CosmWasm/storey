@@ -10,10 +10,6 @@ pub trait Storable {
     fn access_impl<S>(storage: S) -> Self::AccessorT<S>;
 }
 
-pub trait Collection {
-    type Item;
-}
-
 pub trait Key {
     fn bytes(&self) -> &[u8];
 }
