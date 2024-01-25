@@ -1,8 +1,8 @@
-use std::marker::PhantomData;
+use std::{borrow::Borrow, marker::PhantomData};
 
 use crate::{storage_branch::StorageBranch, Storage};
 
-use super::{Key, Storable};
+use super::Storable;
 
 pub struct Map<K: ?Sized, V> {
     prefix: &'static [u8],
@@ -11,7 +11,6 @@ pub struct Map<K: ?Sized, V> {
 
 impl<K, V> Map<K, V>
 where
-    K: ?Sized,
     V: Storable,
 {
     pub const fn new(prefix: &'static [u8]) -> Self {
@@ -31,7 +30,6 @@ where
 
 impl<K, V> Storable for Map<K, V>
 where
-    K: ?Sized,
     V: Storable,
 {
     type AccessorT<S> = MapAccess<K, V, S>;
@@ -51,12 +49,32 @@ pub struct MapAccess<K: ?Sized, V, S> {
 
 impl<K, V, S> MapAccess<K, V, S>
 where
-    K: Key + ?Sized,
+    K: Key,
     V: Storable,
     S: Storage,
 {
-    pub fn get<'s>(&'s self, key: &K) -> V::AccessorT<StorageBranch<'s, S>> {
+    pub fn get<'s, Q>(&'s self, key: &Q) -> V::AccessorT<StorageBranch<'s, S>>
+    where
+        K: Borrow<Q>,
+        Q: Key + ?Sized,
+    {
         let key = key.bytes();
         V::access_impl(StorageBranch::new(&self.storage, key.to_vec()))
+    }
+}
+
+pub trait Key {
+    fn bytes(&self) -> &[u8];
+}
+
+impl Key for String {
+    fn bytes(&self) -> &[u8] {
+        self.as_bytes()
+    }
+}
+
+impl Key for str {
+    fn bytes(&self) -> &[u8] {
+        self.as_bytes()
     }
 }
