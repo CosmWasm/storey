@@ -6,6 +6,8 @@ pub use map::{Map, MapAccess};
 
 pub trait Storable {
     type AccessorT<S>;
+    type Key;
+    type Value;
 
     fn access_impl<S>(storage: S) -> Self::AccessorT<S>;
 }

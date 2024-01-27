@@ -39,6 +39,8 @@ where
     T: EncodableWith<E> + DecodableWith<E>,
 {
     type AccessorT<S> = ItemAccess<E, T, S>;
+    type Key = ();
+    type Value = T;
 
     fn access_impl<S>(storage: S) -> ItemAccess<E, T, S> {
         ItemAccess {

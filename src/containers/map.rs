@@ -33,6 +33,8 @@ where
     V: Storable,
 {
     type AccessorT<S> = MapAccess<K, V, S>;
+    type Key = (K, V::Key);
+    type Value = V::Value;
 
     fn access_impl<S>(storage: S) -> MapAccess<K, V, S> {
         MapAccess {
