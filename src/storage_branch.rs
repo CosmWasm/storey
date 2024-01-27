@@ -130,3 +130,70 @@ fn sub_bounds(
         )
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // TODO: move TestStorage and use it for these unit tests?
+
+    // use crate::backend::TestStorage;
+
+    // #[test]
+    // fn storage_branch() {
+    //     let storage = TestStorage::new();
+    //     let branch = StorageBranch::new(&storage, b"foo".to_vec());
+
+    //     branch.set(b"bar", b"baz");
+    //     branch.set(b"qux", b"quux");
+
+    //     assert_eq!(storage.get(b"bar"), None);
+    //     assert_eq!(storage.get(b"qux"), None);
+
+    //     assert_eq!(storage.get(b"foobar"), Some(b"baz".to_vec()));
+    //     assert_eq!(storage.get(b"fooqux"), Some(b"quux".to_vec()));
+    // }
+
+    #[test]
+    fn sub_bounds_no_prefix() {
+        assert_eq!(
+            sub_bounds(&[], Some(b"foo"), Some(b"bar")),
+            (Some(b"foo".to_vec()), Some(b"bar".to_vec()))
+        );
+
+        assert_eq!(
+            sub_bounds(&[], Some(b"foo"), None),
+            (Some(b"foo".to_vec()), None)
+        );
+
+        assert_eq!(
+            sub_bounds(&[], None, Some(b"bar")),
+            (None, Some(b"bar".to_vec()))
+        );
+
+        assert_eq!(sub_bounds(&[], None, None), (None, None));
+    }
+
+    #[test]
+    fn sub_bounds_with_prefix() {
+        assert_eq!(
+            sub_bounds(b"foo", Some(b"bar"), Some(b"baz")),
+            (Some(b"foobar".to_vec()), Some(b"foobaz".to_vec()))
+        );
+
+        assert_eq!(
+            sub_bounds(b"foo", Some(b"bar"), None),
+            (Some(b"foobar".to_vec()), Some(b"fop".to_vec()))
+        );
+
+        assert_eq!(
+            sub_bounds(b"foo", None, Some(b"baz")),
+            (Some(b"foo".to_vec()), Some(b"foobaz".to_vec()))
+        );
+
+        assert_eq!(
+            sub_bounds(b"foo", None, None),
+            (Some(b"foo".to_vec()), Some(b"fop".to_vec()))
+        );
+    }
+}
