@@ -71,8 +71,14 @@ where
         K: Borrow<Q>,
         Q: Key + ?Sized,
     {
-        let key = key.bytes();
-        V::access_impl(StorageBranch::new(&self.storage, key.to_vec()))
+        let len = key.bytes().len();
+        let bytes = key.bytes();
+        let mut key = Vec::with_capacity(len + 1);
+
+        key.push(len as u8);
+        key.extend_from_slice(bytes);
+
+        V::access_impl(StorageBranch::new(&self.storage, key))
     }
 }
 

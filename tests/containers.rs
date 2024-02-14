@@ -34,7 +34,7 @@ fn map() {
 
     assert_eq!(access.get("foo").get().unwrap(), Some(1337));
     assert_eq!(
-        storage.get(&[0, 102, 111, 111]),
+        storage.get(&[0, 3, 102, 111, 111]),
         Some(1337u64.to_le_bytes().to_vec())
     );
     assert_eq!(access.get("bar").get().unwrap(), None);
@@ -57,7 +57,7 @@ fn map_of_map() {
         Some(1337)
     );
     assert_eq!(
-        storage.get(&[0, 102, 111, 111, 98, 97, 114]),
+        storage.get(&[0, 3, 102, 111, 111, 3, 98, 97, 114]),
         Some(1337u64.to_le_bytes().to_vec())
     );
     assert_eq!(
