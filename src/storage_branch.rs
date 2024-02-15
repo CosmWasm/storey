@@ -31,17 +31,20 @@ impl<S: StorageMut> StorageMut for StorageBranch<'_, S> {
 }
 
 impl<S: IterableStorage> IterableStorage for StorageBranch<'_, S> {
-    type KeysIterator<'a> = S::KeysIterator<'a> where Self: 'a;
+    type KeysIterator<'a> = BranchKeysIter<S::KeysIterator<'a>> where Self: 'a;
     type ValuesIterator<'a> = S::ValuesIterator<'a> where Self: 'a;
-    type PairsIterator<'a> = S::PairsIterator<'a> where Self: 'a;
+    type PairsIterator<'a> = BranchKVIter<S::PairsIterator<'a>> where Self: 'a;
 
     fn keys<'a>(&'a self, start: Option<&[u8]>, end: Option<&[u8]>) -> Self::KeysIterator<'a> {
         let (start, end) = sub_bounds(&self.prefix, start, end);
 
-        self.backend.keys(
-            start.as_ref().map(AsRef::as_ref),
-            end.as_ref().map(AsRef::as_ref),
-        )
+        BranchKeysIter {
+            inner: self.backend.keys(
+                start.as_ref().map(AsRef::as_ref),
+                end.as_ref().map(AsRef::as_ref),
+            ),
+            prefix_len: self.prefix.len(),
+        }
     }
 
     fn values<'a>(&'a self, start: Option<&[u8]>, end: Option<&[u8]>) -> Self::ValuesIterator<'a> {
@@ -56,17 +59,20 @@ impl<S: IterableStorage> IterableStorage for StorageBranch<'_, S> {
     fn pairs<'a>(&'a self, start: Option<&[u8]>, end: Option<&[u8]>) -> Self::PairsIterator<'a> {
         let (start, end) = sub_bounds(&self.prefix, start, end);
 
-        self.backend.pairs(
-            start.as_ref().map(AsRef::as_ref),
-            end.as_ref().map(AsRef::as_ref),
-        )
+        BranchKVIter {
+            inner: self.backend.pairs(
+                start.as_ref().map(AsRef::as_ref),
+                end.as_ref().map(AsRef::as_ref),
+            ),
+            prefix_len: self.prefix.len(),
+        }
     }
 }
 
 impl<S: RevIterableStorage> RevIterableStorage for StorageBranch<'_, S> {
-    type RevKeysIterator<'a> = S::RevKeysIterator<'a> where Self: 'a;
+    type RevKeysIterator<'a> = BranchKeysIter<S::RevKeysIterator<'a>> where Self: 'a;
     type RevValuesIterator<'a> = S::RevValuesIterator<'a> where Self: 'a;
-    type RevPairsIterator<'a> = S::RevPairsIterator<'a> where Self: 'a;
+    type RevPairsIterator<'a> = BranchKVIter<S::RevPairsIterator<'a>> where Self: 'a;
 
     fn rev_keys<'a>(
         &'a self,
@@ -75,10 +81,13 @@ impl<S: RevIterableStorage> RevIterableStorage for StorageBranch<'_, S> {
     ) -> Self::RevKeysIterator<'a> {
         let (start, end) = sub_bounds(&self.prefix, start, end);
 
-        self.backend.rev_keys(
-            start.as_ref().map(AsRef::as_ref),
-            end.as_ref().map(AsRef::as_ref),
-        )
+        BranchKeysIter {
+            inner: self.backend.rev_keys(
+                start.as_ref().map(AsRef::as_ref),
+                end.as_ref().map(AsRef::as_ref),
+            ),
+            prefix_len: self.prefix.len(),
+        }
     }
 
     fn rev_values<'a>(
@@ -101,10 +110,13 @@ impl<S: RevIterableStorage> RevIterableStorage for StorageBranch<'_, S> {
     ) -> Self::RevPairsIterator<'a> {
         let (start, end) = sub_bounds(&self.prefix, start, end);
 
-        self.backend.rev_pairs(
-            start.as_ref().map(AsRef::as_ref),
-            end.as_ref().map(AsRef::as_ref),
-        )
+        BranchKVIter {
+            inner: self.backend.rev_pairs(
+                start.as_ref().map(AsRef::as_ref),
+                end.as_ref().map(AsRef::as_ref),
+            ),
+            prefix_len: self.prefix.len(),
+        }
     }
 }
 
@@ -128,6 +140,41 @@ fn sub_bounds(
                 pref
             })),
         )
+    }
+}
+
+pub struct BranchKeysIter<I> {
+    inner: I,
+    prefix_len: usize,
+}
+
+impl<'a, I> Iterator for BranchKeysIter<I>
+where
+    I: Iterator<Item = Vec<u8>>,
+{
+    type Item = Vec<u8>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next().map(|key| key[self.prefix_len..].to_vec())
+    }
+}
+
+pub struct BranchKVIter<I> {
+    inner: I,
+    prefix_len: usize,
+}
+
+impl<'a, I> Iterator for BranchKVIter<I>
+where
+    I: Iterator<Item = (Vec<u8>, Vec<u8>)>,
+{
+    type Item = (Vec<u8>, Vec<u8>);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next().map(|(key, value)| {
+            let key = key[self.prefix_len..].to_vec();
+            (key, value)
+        })
     }
 }
 

@@ -65,3 +65,67 @@ fn map_of_map() {
         None
     );
 }
+
+#[test]
+fn simple_iteration() {
+    let storage = TestStorage::new();
+
+    let map = Map::<String, Item<u64, TestEncoding>>::new(&[0]);
+    let access = map.access(&storage);
+
+    access.get("foo").set(&1337).unwrap();
+    access.get("bar").set(&42).unwrap();
+
+    let items = access
+        .iter(None, None)
+        .collect::<Result<Vec<_>, _>>()
+        .unwrap();
+    assert_eq!(
+        items,
+        vec![
+            (("bar".to_string(), ()), 42),
+            (("foo".to_string(), ()), 1337)
+        ]
+    );
+}
+
+#[test]
+fn composable_iteration() {
+    let storage = TestStorage::new();
+
+    let map = Map::<String, Map<String, Item<u64, TestEncoding>>>::new(&[0]);
+    let access = map.access(&storage);
+
+    // populate with data
+    access.get("foo").get("bar").set(&1337).unwrap();
+    access.get("foo").get("baz").set(&42).unwrap();
+    access.get("qux").get("quux").set(&9001).unwrap();
+
+    // iterate over all items
+    let items = access
+        .iter(None, None)
+        .collect::<Result<Vec<_>, _>>()
+        .unwrap();
+    assert_eq!(
+        items,
+        vec![
+            (("foo".to_string(), ("bar".to_string(), ())), 1337),
+            (("foo".to_string(), ("baz".to_string(), ())), 42),
+            (("qux".to_string(), ("quux".to_string(), ())), 9001)
+        ]
+    );
+
+    // iterate over items under "foo"
+    let items = access
+        .get("foo")
+        .iter(None, None)
+        .collect::<Result<Vec<_>, _>>()
+        .unwrap();
+    assert_eq!(
+        items,
+        vec![
+            (("bar".to_string(), ()), 1337),
+            (("baz".to_string(), ()), 42)
+        ]
+    );
+}
