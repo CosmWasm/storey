@@ -73,7 +73,7 @@ where
     V: Storable,
     S: Storage,
 {
-    pub fn get<'s, Q>(&'s self, key: &Q) -> V::AccessorT<StorageBranch<'s, S>>
+    pub fn entry<'s, Q>(&'s self, key: &Q) -> V::AccessorT<StorageBranch<'s, S>>
     where
         K: Borrow<Q>,
         Q: Key + ?Sized,
