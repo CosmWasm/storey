@@ -28,7 +28,7 @@ impl TestStorage {
 impl stork::Storage for TestStorage {
     fn get(&self, key: &[u8]) -> Option<Vec<u8>> {
         // Safety: see above
-        unsafe { (&*self.0.get()).get(key).map(|v| v.clone()) }
+        unsafe { (*self.0.get()).get(key).cloned() }
     }
 }
 
@@ -36,14 +36,14 @@ impl stork::StorageMut for TestStorage {
     fn set(&self, key: &[u8], value: &[u8]) {
         // Safety: see above
         unsafe {
-            (&mut *self.0.get()).insert(key.to_vec(), value.to_vec());
+            (*self.0.get()).insert(key.to_vec(), value.to_vec());
         }
     }
 
     fn remove(&self, key: &[u8]) {
         // Safety: see above
         unsafe {
-            (&mut *self.0.get()).remove(key);
+            (*self.0.get()).remove(key);
         }
     }
 }
@@ -53,44 +53,41 @@ impl stork::IterableStorage for TestStorage {
     type ValuesIterator<'a> = Box<dyn DoubleEndedIterator<Item = Vec<u8>> + 'a>;
     type PairsIterator<'a> = Box<dyn DoubleEndedIterator<Item = (Vec<u8>, Vec<u8>)> + 'a>;
 
-    fn keys<'a>(
-        &'a self,
-        start: Option<&'a [u8]>,
-        end: Option<&'a [u8]>,
-    ) -> Self::KeysIterator<'a> {
+    fn keys<'a>(&'a self, start: Option<&[u8]>, end: Option<&[u8]>) -> Self::KeysIterator<'a> {
+        let start = start.map(|x| x.to_vec());
+        let end = end.map(|x| x.to_vec());
+
         Box::new(
             // Safety: see above
-            unsafe { (&*self.0.get()).clone() }
+            unsafe { (*self.0.get()).clone() }
                 .into_iter()
-                .filter(move |(k, _)| check_bounds(k, start, end))
+                .filter(move |(k, _)| check_bounds(k, start.as_ref(), end.as_ref()))
                 .map(|(k, _)| k),
         )
     }
 
-    fn values<'a>(
-        &'a self,
-        start: Option<&'a [u8]>,
-        end: Option<&'a [u8]>,
-    ) -> Self::ValuesIterator<'a> {
+    fn values<'a>(&'a self, start: Option<&[u8]>, end: Option<&[u8]>) -> Self::ValuesIterator<'a> {
+        let start = start.map(|x| x.to_vec());
+        let end = end.map(|x| x.to_vec());
+
         Box::new(
             // Safety: see above
-            unsafe { (&*self.0.get()).clone() }
+            unsafe { (*self.0.get()).clone() }
                 .into_iter()
-                .filter(move |(k, _)| check_bounds(k, start, end))
+                .filter(move |(k, _)| check_bounds(k, start.as_ref(), end.as_ref()))
                 .map(|(_, v)| v),
         )
     }
 
-    fn pairs<'a>(
-        &'a self,
-        start: Option<&'a [u8]>,
-        end: Option<&'a [u8]>,
-    ) -> Self::PairsIterator<'a> {
+    fn pairs<'a>(&'a self, start: Option<&[u8]>, end: Option<&[u8]>) -> Self::PairsIterator<'a> {
+        let start = start.map(|x| x.to_vec());
+        let end = end.map(|x| x.to_vec());
+
         Box::new(
             // Safety: see above
-            unsafe { (&*self.0.get()).clone() }
+            unsafe { (*self.0.get()).clone() }
                 .into_iter()
-                .filter(move |(k, _)| check_bounds(k, start, end)),
+                .filter(move |(k, _)| check_bounds(k, start.as_ref(), end.as_ref())),
         )
     }
 }
@@ -102,30 +99,30 @@ impl stork::RevIterableStorage for TestStorage {
 
     fn rev_keys<'a>(
         &'a self,
-        start: Option<&'a [u8]>,
-        end: Option<&'a [u8]>,
+        start: Option<&[u8]>,
+        end: Option<&[u8]>,
     ) -> Self::RevKeysIterator<'a> {
         Box::new(self.keys(start, end).rev())
     }
 
     fn rev_values<'a>(
         &'a self,
-        start: Option<&'a [u8]>,
-        end: Option<&'a [u8]>,
+        start: Option<&[u8]>,
+        end: Option<&[u8]>,
     ) -> Self::RevValuesIterator<'a> {
         Box::new(self.values(start, end).rev())
     }
 
     fn rev_pairs<'a>(
         &'a self,
-        start: Option<&'a [u8]>,
-        end: Option<&'a [u8]>,
+        start: Option<&[u8]>,
+        end: Option<&[u8]>,
     ) -> Self::RevPairsIterator<'a> {
         Box::new(self.pairs(start, end).rev())
     }
 }
 
-fn check_bounds(v: &[u8], start: Option<&[u8]>, end: Option<&[u8]>) -> bool {
+fn check_bounds(v: &[u8], start: Option<&Vec<u8>>, end: Option<&Vec<u8>>) -> bool {
     if let Some(start) = start {
         if v < start {
             return false;

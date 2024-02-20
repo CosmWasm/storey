@@ -6,7 +6,7 @@ use crate::{
     Storage, StorageMut,
 };
 
-use super::Storable;
+use super::{KeyDecodeError, Storable};
 
 pub struct Item<T, E> {
     prefix: &'static [u8],
@@ -39,12 +39,27 @@ where
     T: EncodableWith<E> + DecodableWith<E>,
 {
     type AccessorT<S> = ItemAccess<E, T, S>;
+    type Key = ();
+    type Value = T;
+    type ValueDecodeError = E::DecodeError;
 
     fn access_impl<S>(storage: S) -> ItemAccess<E, T, S> {
         ItemAccess {
             storage,
             phantom: PhantomData,
         }
+    }
+
+    fn decode_key(key: &[u8]) -> Result<(), KeyDecodeError> {
+        if key.is_empty() {
+            Ok(())
+        } else {
+            Err(KeyDecodeError)
+        }
+    }
+
+    fn decode_value(value: &[u8]) -> Result<Self::Value, Self::ValueDecodeError> {
+        T::decode(value)
     }
 }
 
