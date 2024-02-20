@@ -40,7 +40,6 @@ where
 {
     type AccessorT<S> = ItemAccess<E, T, S>;
     type Key = ();
-    type KeyDecodeError = ();
     type Value = T;
     type ValueDecodeError = E::DecodeError;
 

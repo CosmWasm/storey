@@ -37,7 +37,6 @@ where
 {
     type AccessorT<S> = MapAccess<K, V, S>;
     type Key = (K, V::Key);
-    type KeyDecodeError = ();
     type Value = V::Value;
     type ValueDecodeError = V::ValueDecodeError;
 
@@ -49,10 +48,14 @@ where
     }
 
     fn decode_key(key: &[u8]) -> Result<Self::Key, ()> {
-        // TODO: bounds checking + error handling
-        let len = key[0] as usize;
+        let len = *key.get(0).ok_or(())? as usize;
+
+        if key.len() < len + 1 {
+            return Err(());
+        }
+
         let map_key = K::from_bytes(&key[1..len + 1 as usize])?;
-        let rest = V::decode_key(&key[len + 1..]).unwrap();
+        let rest = V::decode_key(&key[len + 1..])?;
 
         Ok((map_key, rest))
     }
@@ -119,16 +122,13 @@ where
 {
     type Item = Result<
         (<Map<K, V> as Storable>::Key, <Map<K, V> as Storable>::Value),
-        KVDecodeError<
-            <Map<K, V> as Storable>::KeyDecodeError,
-            <Map<K, V> as Storable>::ValueDecodeError,
-        >,
+        KVDecodeError<<Map<K, V> as Storable>::ValueDecodeError>,
     >;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next().map(|(k, v)| -> Self::Item {
             match (Map::<K, V>::decode_key(&k), Map::<K, V>::decode_value(&v)) {
-                (Err(e), _) => Err(KVDecodeError::Key(e)),
+                (Err(_), _) => Err(KVDecodeError::Key),
                 (_, Err(e)) => Err(KVDecodeError::Value(e)),
                 (Ok(k), Ok(v)) => Ok((k, v)),
             }
@@ -137,8 +137,8 @@ where
 }
 
 #[derive(Debug, PartialEq)]
-pub enum KVDecodeError<K, V> {
-    Key(K),
+pub enum KVDecodeError<V> {
+    Key,
     Value(V),
 }
 

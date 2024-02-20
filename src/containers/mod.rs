@@ -7,7 +7,6 @@ pub use map::{Map, MapAccess};
 pub trait Storable {
     type AccessorT<S>;
     type Key;
-    type KeyDecodeError;
     type Value;
     type ValueDecodeError;
 
