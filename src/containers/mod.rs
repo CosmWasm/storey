@@ -16,10 +16,12 @@ pub trait Storable {
 
     fn access_impl<S>(storage: S) -> Self::AccessorT<S>;
 
-    fn decode_key(key: &[u8]) -> Result<Self::Key, ()>;
+    fn decode_key(key: &[u8]) -> Result<Self::Key, KeyDecodeError>;
 
     fn decode_value(value: &[u8]) -> Result<Self::Value, Self::ValueDecodeError>;
 }
+
+pub struct KeyDecodeError;
 
 pub struct StorableIter<'i, S, B>
 where

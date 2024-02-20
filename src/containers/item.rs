@@ -6,7 +6,7 @@ use crate::{
     Storage, StorageMut,
 };
 
-use super::Storable;
+use super::{KeyDecodeError, Storable};
 
 pub struct Item<T, E> {
     prefix: &'static [u8],
@@ -50,11 +50,11 @@ where
         }
     }
 
-    fn decode_key(key: &[u8]) -> Result<(), ()> {
+    fn decode_key(key: &[u8]) -> Result<(), KeyDecodeError> {
         if key.is_empty() {
             Ok(())
         } else {
-            Err(())
+            Err(KeyDecodeError)
         }
     }
 

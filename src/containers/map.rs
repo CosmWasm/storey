@@ -3,7 +3,7 @@ use std::{borrow::Borrow, marker::PhantomData};
 use crate::storage_branch::StorageBranch;
 use crate::{IterableStorage, Storage};
 
-use super::{Storable, StorableIter};
+use super::{KeyDecodeError, Storable, StorableIter};
 
 pub struct Map<K: ?Sized, V> {
     prefix: &'static [u8],
@@ -47,14 +47,14 @@ where
         }
     }
 
-    fn decode_key(key: &[u8]) -> Result<Self::Key, ()> {
-        let len = *key.get(0).ok_or(())? as usize;
+    fn decode_key(key: &[u8]) -> Result<Self::Key, KeyDecodeError> {
+        let len = *key.first().ok_or(KeyDecodeError)? as usize;
 
         if key.len() < len + 1 {
-            return Err(());
+            return Err(KeyDecodeError);
         }
 
-        let map_key = K::from_bytes(&key[1..len + 1 as usize])?;
+        let map_key = K::from_bytes(&key[1..len + 1]).map_err(|_| KeyDecodeError)?;
         let rest = V::decode_key(&key[len + 1..])?;
 
         Ok((map_key, rest))

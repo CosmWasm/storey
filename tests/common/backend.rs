@@ -28,7 +28,7 @@ impl TestStorage {
 impl stork::Storage for TestStorage {
     fn get(&self, key: &[u8]) -> Option<Vec<u8>> {
         // Safety: see above
-        unsafe { (&*self.0.get()).get(key).map(|v| v.clone()) }
+        unsafe { (*self.0.get()).get(key).cloned() }
     }
 }
 
@@ -36,14 +36,14 @@ impl stork::StorageMut for TestStorage {
     fn set(&self, key: &[u8], value: &[u8]) {
         // Safety: see above
         unsafe {
-            (&mut *self.0.get()).insert(key.to_vec(), value.to_vec());
+            (*self.0.get()).insert(key.to_vec(), value.to_vec());
         }
     }
 
     fn remove(&self, key: &[u8]) {
         // Safety: see above
         unsafe {
-            (&mut *self.0.get()).remove(key);
+            (*self.0.get()).remove(key);
         }
     }
 }
@@ -59,7 +59,7 @@ impl stork::IterableStorage for TestStorage {
 
         Box::new(
             // Safety: see above
-            unsafe { (&*self.0.get()).clone() }
+            unsafe { (*self.0.get()).clone() }
                 .into_iter()
                 .filter(move |(k, _)| check_bounds(k, start.as_ref(), end.as_ref()))
                 .map(|(k, _)| k),
@@ -72,7 +72,7 @@ impl stork::IterableStorage for TestStorage {
 
         Box::new(
             // Safety: see above
-            unsafe { (&*self.0.get()).clone() }
+            unsafe { (*self.0.get()).clone() }
                 .into_iter()
                 .filter(move |(k, _)| check_bounds(k, start.as_ref(), end.as_ref()))
                 .map(|(_, v)| v),
@@ -85,7 +85,7 @@ impl stork::IterableStorage for TestStorage {
 
         Box::new(
             // Safety: see above
-            unsafe { (&*self.0.get()).clone() }
+            unsafe { (*self.0.get()).clone() }
                 .into_iter()
                 .filter(move |(k, _)| check_bounds(k, start.as_ref(), end.as_ref())),
         )

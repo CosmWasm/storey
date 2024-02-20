@@ -136,7 +136,9 @@ fn sub_bounds(
             ),
             Some(end.map(|e| [prefix, e].concat()).unwrap_or_else(|| {
                 let mut pref = prefix.to_vec();
-                pref.last_mut().map(|x| *x += 1);
+                if let Some(x) = pref.last_mut() {
+                    *x += 1;
+                }
                 pref
             })),
         )
@@ -148,7 +150,7 @@ pub struct BranchKeysIter<I> {
     prefix_len: usize,
 }
 
-impl<'a, I> Iterator for BranchKeysIter<I>
+impl<I> Iterator for BranchKeysIter<I>
 where
     I: Iterator<Item = Vec<u8>>,
 {
@@ -164,7 +166,7 @@ pub struct BranchKVIter<I> {
     prefix_len: usize,
 }
 
-impl<'a, I> Iterator for BranchKVIter<I>
+impl<I> Iterator for BranchKVIter<I>
 where
     I: Iterator<Item = (Vec<u8>, Vec<u8>)>,
 {
