@@ -3,7 +3,7 @@ use std::{borrow::Borrow, marker::PhantomData};
 use crate::storage_branch::StorageBranch;
 use crate::{IterableStorage, Storage};
 
-use super::Storable;
+use super::{Storable, StorableIter};
 
 pub struct Map<K: ?Sized, V> {
     prefix: &'static [u8],
@@ -94,52 +94,20 @@ where
 
 impl<K, V, S> MapAccess<K, V, S>
 where
-    K: Key,
+    K: OwnedKey,
     V: Storable,
     S: IterableStorage,
 {
-    pub fn iter<'s>(&'s self, start: Option<&[u8]>, end: Option<&[u8]>) -> MapIter<'s, K, V, S> {
-        MapIter {
+    pub fn iter<'s>(
+        &'s self,
+        start: Option<&[u8]>,
+        end: Option<&[u8]>,
+    ) -> StorableIter<'s, Map<K, V>, S> {
+        StorableIter {
             inner: self.storage.pairs(start, end),
             phantom: PhantomData,
         }
     }
-}
-
-pub struct MapIter<'i, K, V, S>
-where
-    S: IterableStorage + 'i,
-{
-    inner: S::PairsIterator<'i>,
-    phantom: PhantomData<(K, V)>,
-}
-
-impl<'i, K, V, S> Iterator for MapIter<'i, K, V, S>
-where
-    S: IterableStorage + 'i,
-    K: OwnedKey,
-    V: Storable,
-{
-    type Item = Result<
-        (<Map<K, V> as Storable>::Key, <Map<K, V> as Storable>::Value),
-        KVDecodeError<<Map<K, V> as Storable>::ValueDecodeError>,
-    >;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.inner.next().map(|(k, v)| -> Self::Item {
-            match (Map::<K, V>::decode_key(&k), Map::<K, V>::decode_value(&v)) {
-                (Err(_), _) => Err(KVDecodeError::Key),
-                (_, Err(e)) => Err(KVDecodeError::Value(e)),
-                (Ok(k), Ok(v)) => Ok((k, v)),
-            }
-        })
-    }
-}
-
-#[derive(Debug, PartialEq)]
-pub enum KVDecodeError<V> {
-    Key,
-    Value(V),
 }
 
 pub trait Key {
