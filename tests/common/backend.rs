@@ -33,14 +33,14 @@ impl stork::Storage for TestStorage {
 }
 
 impl stork::StorageMut for TestStorage {
-    fn set(&self, key: &[u8], value: &[u8]) {
+    fn set(&mut self, key: &[u8], value: &[u8]) {
         // Safety: see above
         unsafe {
             (*self.0.get()).insert(key.to_vec(), value.to_vec());
         }
     }
 
-    fn remove(&self, key: &[u8]) {
+    fn remove(&mut self, key: &[u8]) {
         // Safety: see above
         unsafe {
             (*self.0.get()).remove(key);

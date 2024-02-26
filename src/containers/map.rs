@@ -1,7 +1,7 @@
 use std::{borrow::Borrow, marker::PhantomData};
 
 use crate::storage_branch::StorageBranch;
-use crate::{IterableStorage, Storage};
+use crate::IterableStorage;
 
 use super::{KeyDecodeError, Storable, StorableIter};
 
@@ -22,10 +22,7 @@ where
         }
     }
 
-    pub fn access<'s, S: Storage + 's>(
-        &self,
-        storage: &'s S,
-    ) -> MapAccess<K, V, StorageBranch<'s, S>> {
+    pub fn access<'s, S>(&self, storage: S) -> MapAccess<K, V, StorageBranch<S>> {
         Self::access_impl(StorageBranch::new(storage, self.prefix.to_vec()))
     }
 }
@@ -74,9 +71,8 @@ impl<K, V, S> MapAccess<K, V, S>
 where
     K: Key,
     V: Storable,
-    S: Storage,
 {
-    pub fn entry<'s, Q>(&'s self, key: &Q) -> V::AccessorT<StorageBranch<'s, S>>
+    pub fn entry<Q>(&self, key: &Q) -> V::AccessorT<StorageBranch<&S>>
     where
         K: Borrow<Q>,
         Q: Key + ?Sized,
@@ -89,6 +85,21 @@ where
         key.extend_from_slice(bytes);
 
         V::access_impl(StorageBranch::new(&self.storage, key))
+    }
+
+    pub fn entry_mut<Q>(&mut self, key: &Q) -> V::AccessorT<StorageBranch<&mut S>>
+    where
+        K: Borrow<Q>,
+        Q: Key + ?Sized,
+    {
+        let len = key.bytes().len();
+        let bytes = key.bytes();
+        let mut key = Vec::with_capacity(len + 1);
+
+        key.push(len as u8);
+        key.extend_from_slice(bytes);
+
+        V::access_impl(StorageBranch::new(&mut self.storage, key))
     }
 }
 
