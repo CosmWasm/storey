@@ -22,7 +22,7 @@ where
         }
     }
 
-    pub fn access<'s, S>(&self, storage: S) -> MapAccess<K, V, StorageBranch<S>> {
+    pub fn access<S>(&self, storage: S) -> MapAccess<K, V, StorageBranch<S>> {
         Self::access_impl(StorageBranch::new(storage, self.prefix.to_vec()))
     }
 }
