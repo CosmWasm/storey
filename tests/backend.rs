@@ -2,11 +2,11 @@ mod common;
 
 #[test]
 fn storage_backend() {
-    // TODO: split this into multiple tests
+    // TODO: split this into multiple tests?
 
     use stork::{IterableStorage as _, RevIterableStorage as _, StorageMut as _};
 
-    let storage = common::backend::TestStorage::new();
+    let mut storage = common::backend::TestStorage::new();
 
     storage.set(&[0], b"bar");
     storage.set(&[1], b"baz");

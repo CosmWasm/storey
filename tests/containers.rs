@@ -8,16 +8,15 @@ use common::encoding::TestEncoding;
 
 #[test]
 fn item() {
-    let storage = TestStorage::new();
+    let mut storage = TestStorage::new();
 
     let item0 = Item::<u64, TestEncoding>::new(&[0]);
-    let access0 = item0.access(&storage);
-    access0.set(&42).unwrap();
+    item0.access(&mut storage).set(&42).unwrap();
 
     let item1 = Item::<u64, TestEncoding>::new(&[1]);
     let access1 = item1.access(&storage);
 
-    assert_eq!(access0.get().unwrap(), Some(42));
+    assert_eq!(item0.access(&storage).get().unwrap(), Some(42));
     assert_eq!(storage.get(&[0]), Some(42u64.to_le_bytes().to_vec()));
     assert_eq!(access1.get().unwrap(), None);
     assert_eq!(storage.get(&[1]), None);
@@ -25,30 +24,32 @@ fn item() {
 
 #[test]
 fn map() {
-    let storage = TestStorage::new();
+    let mut storage = TestStorage::new();
 
     let map = Map::<String, Item<u64, TestEncoding>>::new(&[0]);
-    let access = map.access(&storage);
 
-    access.entry("foo").set(&1337).unwrap();
+    map.access(&mut storage)
+        .entry_mut("foo")
+        .set(&1337)
+        .unwrap();
 
-    assert_eq!(access.entry("foo").get().unwrap(), Some(1337));
+    assert_eq!(map.access(&storage).entry("foo").get().unwrap(), Some(1337));
     assert_eq!(
         storage.get(&[0, 3, 102, 111, 111]),
         Some(1337u64.to_le_bytes().to_vec())
     );
-    assert_eq!(access.entry("bar").get().unwrap(), None);
+    assert_eq!(map.access(&storage).entry("bar").get().unwrap(), None);
 }
 
 #[test]
 fn map_of_map() {
-    let storage = TestStorage::new();
+    let mut storage = TestStorage::new();
 
     let map = Map::<String, Map<String, Item<u64, TestEncoding>>>::new(&[0]);
 
-    map.access(&storage)
-        .entry("foo")
-        .entry("bar")
+    map.access(&mut storage)
+        .entry_mut("foo")
+        .entry_mut("bar")
         .set(&1337)
         .unwrap();
 
@@ -76,13 +77,13 @@ fn map_of_map() {
 
 #[test]
 fn simple_iteration() {
-    let storage = TestStorage::new();
+    let mut storage = TestStorage::new();
 
     let map = Map::<String, Item<u64, TestEncoding>>::new(&[0]);
-    let access = map.access(&storage);
+    let mut access = map.access(&mut storage);
 
-    access.entry("foo").set(&1337).unwrap();
-    access.entry("bar").set(&42).unwrap();
+    access.entry_mut("foo").set(&1337).unwrap();
+    access.entry_mut("bar").set(&42).unwrap();
 
     let items = access
         .iter(None, None)
@@ -99,15 +100,19 @@ fn simple_iteration() {
 
 #[test]
 fn composable_iteration() {
-    let storage = TestStorage::new();
+    let mut storage = TestStorage::new();
 
     let map = Map::<String, Map<String, Item<u64, TestEncoding>>>::new(&[0]);
-    let access = map.access(&storage);
+    let mut access = map.access(&mut storage);
 
     // populate with data
-    access.entry("foo").entry("bar").set(&1337).unwrap();
-    access.entry("foo").entry("baz").set(&42).unwrap();
-    access.entry("qux").entry("quux").set(&9001).unwrap();
+    access.entry_mut("foo").entry_mut("bar").set(&1337).unwrap();
+    access.entry_mut("foo").entry_mut("baz").set(&42).unwrap();
+    access
+        .entry_mut("qux")
+        .entry_mut("quux")
+        .set(&9001)
+        .unwrap();
 
     // iterate over all items
     let items = access

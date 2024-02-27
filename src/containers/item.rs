@@ -25,10 +25,7 @@ where
         }
     }
 
-    pub fn access<'s, S: Storage + 's>(
-        &self,
-        storage: &'s S,
-    ) -> ItemAccess<E, T, StorageBranch<'s, S>> {
+    pub fn access<S>(&self, storage: S) -> ItemAccess<E, T, StorageBranch<S>> {
         Self::access_impl(StorageBranch::new(storage, self.prefix.to_vec()))
     }
 }
@@ -88,7 +85,7 @@ where
     T: EncodableWith<E> + DecodableWith<E>,
     S: StorageMut,
 {
-    pub fn set(&self, value: &T) -> Result<(), E::EncodeError> {
+    pub fn set(&mut self, value: &T) -> Result<(), E::EncodeError> {
         let bytes = value.encode()?;
         self.storage.set(&[], &bytes);
         Ok(())
