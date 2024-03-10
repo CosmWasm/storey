@@ -15,11 +15,19 @@ impl<S: Storage> Storage for StorageBranch<&S> {
     fn get(&self, key: &[u8]) -> Option<Vec<u8>> {
         self.backend.get(&[&self.prefix[..], key].concat())
     }
+
+    fn get_meta(&self, key: &[u8]) -> Option<Vec<u8>> {
+        self.backend.get_meta(&[&self.prefix[..], key].concat())
+    }
 }
 
 impl<S: Storage> Storage for StorageBranch<&mut S> {
     fn get(&self, key: &[u8]) -> Option<Vec<u8>> {
         self.backend.get(&[&self.prefix[..], key].concat())
+    }
+
+    fn get_meta(&self, key: &[u8]) -> Option<Vec<u8>> {
+        self.backend.get_meta(&[&self.prefix[..], key].concat())
     }
 }
 
@@ -30,6 +38,15 @@ impl<S: StorageMut> StorageMut for StorageBranch<&mut S> {
 
     fn remove(&mut self, key: &[u8]) {
         self.backend.remove(&[&self.prefix[..], key].concat())
+    }
+
+    fn set_meta(&mut self, key: &[u8], value: &[u8]) {
+        self.backend
+            .set_meta(&[&self.prefix[..], key].concat(), value)
+    }
+
+    fn remove_meta(&mut self, key: &[u8]) {
+        self.backend.remove_meta(&[&self.prefix[..], key].concat())
     }
 }
 

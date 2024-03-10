@@ -100,3 +100,17 @@ fn storage_backend() {
         ]
     );
 }
+
+#[test]
+fn metadata() {
+    use stork::StorageMut as _;
+
+    let mut storage = common::backend::TestStorage::new();
+    storage.set_meta(&[0], b"meta");
+
+    assert_eq!(stork::StorageBackend::get(&storage, &[0]), None);
+    assert_eq!(
+        stork::StorageBackend::get(&storage, &[255, 0]),
+        Some(b"meta".to_vec())
+    );
+}

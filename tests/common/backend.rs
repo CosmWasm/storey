@@ -25,14 +25,14 @@ impl TestStorage {
 // Moreover, we can further guarantee that the dereference is valid because the data
 // is always initialized during construction.
 
-impl stork::Storage for TestStorage {
+impl stork::StorageBackend for TestStorage {
     fn get(&self, key: &[u8]) -> Option<Vec<u8>> {
         // Safety: see above
         unsafe { (*self.0.get()).get(key).cloned() }
     }
 }
 
-impl stork::StorageMut for TestStorage {
+impl stork::StorageBackendMut for TestStorage {
     fn set(&mut self, key: &[u8], value: &[u8]) {
         // Safety: see above
         unsafe {
