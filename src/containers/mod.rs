@@ -1,8 +1,10 @@
+pub mod column;
 mod item;
 mod map;
 
 use std::marker::PhantomData;
 
+pub use column::{Column, ColumnAccess};
 pub use item::{Item, ItemAccess};
 pub use map::{Map, MapAccess};
 

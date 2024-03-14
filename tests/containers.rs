@@ -1,6 +1,6 @@
 mod common;
 
-use stork::containers::{Item, Map};
+use stork::containers::{Column, Item, Map};
 use stork::Storage as _;
 
 use common::backend::TestStorage;
@@ -139,6 +139,66 @@ fn composable_iteration() {
         vec![
             (("bar".to_string(), ()), 1337),
             (("baz".to_string(), ()), 42)
+        ]
+    );
+}
+
+#[test]
+fn column() {
+    let mut storage = TestStorage::new();
+
+    let column = Column::<u64, TestEncoding>::new(&[0]);
+    let mut access = column.access(&mut storage);
+
+    access.push(&1337).unwrap();
+    access.push(&42).unwrap();
+
+    assert_eq!(access.get(0).unwrap(), Some(1337));
+    assert_eq!(access.get(1).unwrap(), Some(42));
+    assert_eq!(access.get(2).unwrap(), None);
+    assert_eq!(access.len().unwrap(), 2);
+
+    access.remove(0).unwrap();
+    assert_eq!(
+        access.update(0, &9001),
+        Err(stork::containers::column::UpdateError::NotFound)
+    );
+    access.update(1, &9001).unwrap();
+
+    assert_eq!(access.get(0).unwrap(), None);
+    assert_eq!(access.get(1).unwrap(), Some(9001));
+    assert_eq!(access.len().unwrap(), 1);
+}
+
+#[test]
+fn map_of_column() {
+    let mut storage = TestStorage::new();
+
+    let map = Map::<String, Column<u64, TestEncoding>>::new(&[0]);
+    let mut access = map.access(&mut storage);
+
+    access.entry_mut("foo").push(&1337).unwrap();
+    access.entry_mut("foo").push(&42).unwrap();
+    access.entry_mut("bar").push(&9001).unwrap();
+
+    assert_eq!(access.entry("foo").get(0).unwrap(), Some(1337));
+    assert_eq!(access.entry("foo").get(1).unwrap(), Some(42));
+    assert_eq!(access.entry("foo").get(2).unwrap(), None);
+    assert_eq!(access.entry("foo").len().unwrap(), 2);
+
+    assert_eq!(access.entry("bar").get(0).unwrap(), Some(9001));
+    assert_eq!(access.entry("bar").len().unwrap(), 1);
+
+    let all = access
+        .iter(None, None)
+        .collect::<Result<Vec<_>, _>>()
+        .unwrap();
+    assert_eq!(
+        all,
+        vec![
+            (("bar".to_string(), 0), 9001),
+            (("foo".to_string(), 0), 1337),
+            (("foo".to_string(), 1), 42)
         ]
     );
 }
