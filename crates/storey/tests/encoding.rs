@@ -1,6 +1,6 @@
 mod common;
 
-use stork::encoding::{DecodableWith as _, EncodableWith as _};
+use storey::encoding::{DecodableWith as _, EncodableWith as _};
 
 #[test]
 fn encoding() {

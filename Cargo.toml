@@ -9,4 +9,4 @@ license = "Apache-2.0"
 [workspace.dependencies]
 thiserror = "1"
 
-stork = { path = "crates/stork", version = "0.1.0" }
+storey = { path = "crates/storey", version = "0.1.0" }

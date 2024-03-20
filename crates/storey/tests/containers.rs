@@ -1,7 +1,7 @@
 mod common;
 
-use stork::containers::{Column, Item, Map};
-use stork::Storage as _;
+use storey::containers::{Column, Item, Map};
+use storey::Storage as _;
 
 use common::backend::TestStorage;
 use common::encoding::TestEncoding;
@@ -161,7 +161,7 @@ fn column() {
     access.remove(0).unwrap();
     assert_eq!(
         access.update(0, &9001),
-        Err(stork::containers::column::UpdateError::NotFound)
+        Err(storey::containers::column::UpdateError::NotFound)
     );
     access.update(1, &9001).unwrap();
 

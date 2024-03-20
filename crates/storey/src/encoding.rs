@@ -27,7 +27,7 @@
 //! ## Encoding example
 //!
 //! ```
-//! use stork::encoding::{EncodableWithImpl, Encoding, Cover};
+//! use storey::encoding::{EncodableWithImpl, Encoding, Cover};
 //!
 //! // - Implementation -
 //!
@@ -49,7 +49,7 @@
 //!
 //! // - Usage -
 //!
-//! use stork::encoding::EncodableWith as _;
+//! use storey::encoding::EncodableWith as _;
 //!
 //! // If there's only one encoding present for `u64`, we can use `encode` directly.
 //! // Otherwise, we would need to disambiguate.
@@ -60,7 +60,7 @@
 //! ## Decoding example
 //!
 //! ```
-//! use stork::encoding::{DecodableWithImpl, Encoding, Cover};
+//! use storey::encoding::{DecodableWithImpl, Encoding, Cover};
 //!
 //! // - Implementation -
 //!
@@ -84,7 +84,7 @@
 //!
 //! // - Usage -
 //!
-//! use stork::encoding::DecodableWith as _;
+//! use storey::encoding::DecodableWith as _;
 //!
 //! // If there's only one encoding present for `u64`, we can use `decode` directly.
 //! // Otherwise, we would need to disambiguate.
