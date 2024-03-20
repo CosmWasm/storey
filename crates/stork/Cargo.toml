@@ -1,0 +1,10 @@
+[package]
+name = "stork"
+authors = { workspace = true }
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.65" # https://caniuse.rs/features/generic_associated_types
+license = { workspace = true }
+
+[dependencies]
+thiserror = { workspace = true }
