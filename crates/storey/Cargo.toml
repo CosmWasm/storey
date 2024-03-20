@@ -7,4 +7,4 @@ rust-version = "1.65" # https://caniuse.rs/features/generic_associated_types
 license = { workspace = true }
 
 [dependencies]
-thiserror = { workspace = true }
+thiserror = "1"

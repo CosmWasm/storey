@@ -6,4 +6,8 @@ edition = "2021"
 license = { workspace = true }
 
 [dependencies]
+ciborium = "0.2"
+cosmwasm-std = "2"
+serde = "1.0.197"
+
 storey = { workspace = true }
