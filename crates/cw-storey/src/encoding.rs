@@ -12,10 +12,7 @@ where
     T: serde::Serialize,
 {
     fn encode_impl(self) -> Result<Vec<u8>, ()> {
-        let mut serialized = Vec::new();
-        ciborium::into_writer(&self.0, &mut serialized).map_err(|_| ())?;
-
-        Ok(serialized)
+        rmp_serde::to_vec(self.0).map_err(|_| ())
     }
 }
 
@@ -24,7 +21,6 @@ where
     T: serde::de::DeserializeOwned,
 {
     fn decode_impl(data: &[u8]) -> Result<Self, ()> {
-        let value = ciborium::from_reader(data).map_err(|_| ())?;
-        Ok(Cover(value))
+        rmp_serde::from_slice(data).map(Cover).map_err(|_| ())
     }
 }
