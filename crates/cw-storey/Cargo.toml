@@ -6,4 +6,8 @@ edition = "2021"
 license = { workspace = true }
 
 [dependencies]
+rmp-serde = "1"
+cosmwasm-std = "2"
+serde = "1"
+
 storey = { workspace = true }

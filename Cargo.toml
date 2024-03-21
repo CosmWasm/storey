@@ -7,6 +7,4 @@ authors = ["Tomasz Kurcz", "Confio GmbH"]
 license = "Apache-2.0"
 
 [workspace.dependencies]
-thiserror = "1"
-
 storey = { path = "crates/storey", version = "0.1.0" }
