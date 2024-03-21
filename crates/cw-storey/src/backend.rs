@@ -1,6 +1,6 @@
 use storey::{StorageBackend, StorageBackendMut};
 
-struct CwStorage<S>(S);
+pub struct CwStorage<S>(pub S);
 
 impl<S> StorageBackend for CwStorage<S>
 where
