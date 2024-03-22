@@ -5,6 +5,10 @@ resolver = "2"
 [workspace.package]
 authors = ["Tomasz Kurcz", "Confio GmbH"]
 license = "Apache-2.0"
+repository = "https://github.com/CosmWasm/storey"
+homepage = "https://cosmwasm.com/"
+categories = ["cryptography::cryptocurrencies"]
+keywords = ["CosmWasm"]
 
 [workspace.dependencies]
 storey = { path = "crates/storey", version = "0.1.0" }

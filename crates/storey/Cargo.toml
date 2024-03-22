@@ -1,6 +1,11 @@
 [package]
 name = "storey"
+description = "Storage abstractions for blockchains"
 authors = { workspace = true }
+repository = { workspace = true }
+homepage = { workspace = true }
+categories = { workspace = true }
+keywords = { workspace = true }
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.65" # https://caniuse.rs/features/generic_associated_types
