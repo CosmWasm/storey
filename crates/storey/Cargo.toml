@@ -1,6 +1,7 @@
 [package]
 name = "storey"
 description = "Storage abstractions for blockchains"
+readme = "../../README.md"
 authors = { workspace = true }
 repository = { workspace = true }
 homepage = { workspace = true }
