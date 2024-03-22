@@ -1,8 +1,6 @@
-# _stork_
+# _storey_
 
-No, not the baby-delivery birds.
-
-_stork_ is currently a pile of debris with some (hopefully) good ideas strewn about. One day, a new storage abstraction library for the decentralized world might rise from it. Like a phoenix from ashes. Sort of.
+_storey_ is currently a pile of debris with some (hopefully) good ideas strewn about. One day, a new storage abstraction library for the decentralized world might rise from it. Like a phoenix from ashes. Or like a sleep-deprived commuter at 6 a.m. One of the two.
 
 ## Loose goals (subject to change)
 
