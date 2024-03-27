@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1](https://github.com/CosmWasm/storey/compare/cw-storey-v0.1.0...cw-storey-v0.1.1) - 2024-03-27
+
+### Other
+- *(stork)* reorganize storage code
+- release
+
 ## [0.1.0](https://github.com/CosmWasm/storey/releases/tag/cw-storey-v0.1.0) - 2024-03-22
 
 ### Added
