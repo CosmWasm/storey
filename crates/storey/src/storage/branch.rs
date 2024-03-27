@@ -1,4 +1,4 @@
-use crate::{IterableStorage, RevIterableStorage, Storage, StorageMut};
+use crate::storage::{IterableStorage, RevIterableStorage, Storage, StorageMut};
 
 pub struct StorageBranch<S> {
     backend: S,

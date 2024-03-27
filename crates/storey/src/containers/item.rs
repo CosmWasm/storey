@@ -1,10 +1,8 @@
 use std::marker::PhantomData;
 
-use crate::storage_branch::StorageBranch;
-use crate::{
-    encoding::{DecodableWith, EncodableWith, Encoding},
-    Storage, StorageMut,
-};
+use crate::encoding::{DecodableWith, EncodableWith, Encoding};
+use crate::storage::StorageBranch;
+use crate::storage::{Storage, StorageMut};
 
 use super::{KeyDecodeError, Storable};
 

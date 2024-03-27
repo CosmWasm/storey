@@ -1,4 +1,4 @@
-use storey::{StorageBackend, StorageBackendMut};
+use storey::storage::{StorageBackend, StorageBackendMut};
 
 pub struct CwStorage<S>(pub S);
 

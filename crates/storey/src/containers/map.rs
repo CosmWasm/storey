@@ -1,7 +1,7 @@
 use std::{borrow::Borrow, marker::PhantomData};
 
-use crate::storage_branch::StorageBranch;
-use crate::IterableStorage;
+use crate::storage::IterableStorage;
+use crate::storage::StorageBranch;
 
 use super::{KeyDecodeError, Storable, StorableIter};
 

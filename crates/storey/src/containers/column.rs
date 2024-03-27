@@ -2,9 +2,10 @@ use std::marker::PhantomData;
 
 use thiserror::Error;
 
+use crate::encoding::Encoding;
 use crate::encoding::{DecodableWith, EncodableWith};
-use crate::{encoding::Encoding, storage_branch::StorageBranch};
-use crate::{Storage, StorageMut};
+use crate::storage::StorageBranch;
+use crate::storage::{Storage, StorageMut};
 
 use super::{KeyDecodeError, Storable};
 

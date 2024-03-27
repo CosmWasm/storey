@@ -8,7 +8,7 @@ pub use column::{Column, ColumnAccess};
 pub use item::{Item, ItemAccess};
 pub use map::{Map, MapAccess};
 
-use crate::IterableStorage;
+use crate::storage::IterableStorage;
 
 pub trait Storable {
     type AccessorT<S>;

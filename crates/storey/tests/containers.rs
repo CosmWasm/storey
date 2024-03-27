@@ -1,7 +1,7 @@
 mod common;
 
 use storey::containers::{Column, Item, Map};
-use storey::Storage as _;
+use storey::storage::Storage as _;
 
 use common::backend::TestStorage;
 use common::encoding::TestEncoding;
