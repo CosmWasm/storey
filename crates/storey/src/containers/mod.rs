@@ -57,3 +57,21 @@ pub enum KVDecodeError<V> {
     Key,
     Value(V),
 }
+
+pub trait IterableAccessor {
+    type StorableT: Storable;
+    type StorageT: IterableStorage;
+
+    fn storage(&self) -> &Self::StorageT;
+
+    fn iter<'s>(
+        &'s self,
+        start: Option<&[u8]>,
+        end: Option<&[u8]>,
+    ) -> StorableIter<'s, Self::StorableT, Self::StorageT> {
+        StorableIter {
+            inner: self.storage().pairs(start, end),
+            phantom: PhantomData,
+        }
+    }
+}

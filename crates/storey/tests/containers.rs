@@ -1,6 +1,6 @@
 mod common;
 
-use storey::containers::{Column, Item, Map};
+use storey::containers::{Column, Item, IterableAccessor as _, Map};
 use storey::storage::Storage as _;
 
 use common::backend::TestStorage;
