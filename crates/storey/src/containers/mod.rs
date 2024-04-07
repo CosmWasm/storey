@@ -26,6 +26,52 @@ pub trait Storable {
 #[derive(Debug, PartialEq)]
 pub struct KeyDecodeError;
 
+#[derive(Debug, PartialEq)]
+pub enum KVDecodeError<V> {
+    Key,
+    Value(V),
+}
+
+pub trait IterableAccessor {
+    type StorableT: Storable;
+    type StorageT: IterableStorage;
+
+    fn storage(&self) -> &Self::StorageT;
+
+    fn pairs<'s>(
+        &'s self,
+        start: Option<&[u8]>,
+        end: Option<&[u8]>,
+    ) -> StorableIter<'s, Self::StorableT, Self::StorageT> {
+        StorableIter {
+            inner: self.storage().pairs(start, end),
+            phantom: PhantomData,
+        }
+    }
+
+    fn keys<'s>(
+        &'s self,
+        start: Option<&[u8]>,
+        end: Option<&[u8]>,
+    ) -> StorableKeys<'s, Self::StorableT, Self::StorageT> {
+        StorableKeys {
+            inner: self.storage().keys(start, end),
+            phantom: PhantomData,
+        }
+    }
+
+    fn values<'s>(
+        &'s self,
+        start: Option<&[u8]>,
+        end: Option<&[u8]>,
+    ) -> StorableValues<'s, Self::StorableT, Self::StorageT> {
+        StorableValues {
+            inner: self.storage().values(start, end),
+            phantom: PhantomData,
+        }
+    }
+}
+
 pub struct StorableIter<'i, S, B>
 where
     S: Storable,
@@ -92,51 +138,5 @@ where
 
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next().map(|v| S::decode_value(&v))
-    }
-}
-
-#[derive(Debug, PartialEq)]
-pub enum KVDecodeError<V> {
-    Key,
-    Value(V),
-}
-
-pub trait IterableAccessor {
-    type StorableT: Storable;
-    type StorageT: IterableStorage;
-
-    fn storage(&self) -> &Self::StorageT;
-
-    fn pairs<'s>(
-        &'s self,
-        start: Option<&[u8]>,
-        end: Option<&[u8]>,
-    ) -> StorableIter<'s, Self::StorableT, Self::StorageT> {
-        StorableIter {
-            inner: self.storage().pairs(start, end),
-            phantom: PhantomData,
-        }
-    }
-
-    fn keys<'s>(
-        &'s self,
-        start: Option<&[u8]>,
-        end: Option<&[u8]>,
-    ) -> StorableKeys<'s, Self::StorableT, Self::StorageT> {
-        StorableKeys {
-            inner: self.storage().keys(start, end),
-            phantom: PhantomData,
-        }
-    }
-
-    fn values<'s>(
-        &'s self,
-        start: Option<&[u8]>,
-        end: Option<&[u8]>,
-    ) -> StorableValues<'s, Self::StorableT, Self::StorageT> {
-        StorableValues {
-            inner: self.storage().values(start, end),
-            phantom: PhantomData,
-        }
     }
 }
