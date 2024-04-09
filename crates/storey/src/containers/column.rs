@@ -4,10 +4,10 @@ use thiserror::Error;
 
 use crate::encoding::Encoding;
 use crate::encoding::{DecodableWith, EncodableWith};
-use crate::storage::StorageBranch;
+use crate::storage::{IterableStorage, StorageBranch};
 use crate::storage::{Storage, StorageMut};
 
-use super::{KeyDecodeError, Storable};
+use super::{IterableAccessor, KeyDecodeError, Storable};
 
 const META_NEXT_IX: &[u8] = &[0];
 const META_LEN: &[u8] = &[1];
@@ -65,6 +65,20 @@ where
 pub struct ColumnAccess<E, T, S> {
     storage: S,
     phantom: PhantomData<(E, T)>,
+}
+
+impl<E, T, S> IterableAccessor for ColumnAccess<E, T, S>
+where
+    E: Encoding,
+    T: EncodableWith<E> + DecodableWith<E>,
+    S: IterableStorage,
+{
+    type StorableT = Column<T, E>;
+    type StorageT = S;
+
+    fn storage(&self) -> &Self::StorageT {
+        &self.storage
+    }
 }
 
 impl<E, T, S> ColumnAccess<E, T, S>

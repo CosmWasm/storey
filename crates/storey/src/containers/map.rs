@@ -3,7 +3,8 @@ use std::{borrow::Borrow, marker::PhantomData};
 use crate::storage::IterableStorage;
 use crate::storage::StorageBranch;
 
-use super::{KeyDecodeError, Storable, StorableIter};
+use super::IterableAccessor;
+use super::{KeyDecodeError, Storable};
 
 pub struct Map<K: ?Sized, V> {
     prefix: &'static [u8],
@@ -103,21 +104,17 @@ where
     }
 }
 
-impl<K, V, S> MapAccess<K, V, S>
+impl<K, V, S> IterableAccessor for MapAccess<K, V, S>
 where
     K: OwnedKey,
     V: Storable,
     S: IterableStorage,
 {
-    pub fn iter<'s>(
-        &'s self,
-        start: Option<&[u8]>,
-        end: Option<&[u8]>,
-    ) -> StorableIter<'s, Map<K, V>, S> {
-        StorableIter {
-            inner: self.storage.pairs(start, end),
-            phantom: PhantomData,
-        }
+    type StorableT = Map<K, V>;
+    type StorageT = S;
+
+    fn storage(&self) -> &Self::StorageT {
+        &self.storage
     }
 }
 

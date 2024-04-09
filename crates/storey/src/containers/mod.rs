@@ -23,7 +23,54 @@ pub trait Storable {
     fn decode_value(value: &[u8]) -> Result<Self::Value, Self::ValueDecodeError>;
 }
 
+#[derive(Debug, PartialEq)]
 pub struct KeyDecodeError;
+
+#[derive(Debug, PartialEq)]
+pub enum KVDecodeError<V> {
+    Key,
+    Value(V),
+}
+
+pub trait IterableAccessor {
+    type StorableT: Storable;
+    type StorageT: IterableStorage;
+
+    fn storage(&self) -> &Self::StorageT;
+
+    fn pairs<'s>(
+        &'s self,
+        start: Option<&[u8]>,
+        end: Option<&[u8]>,
+    ) -> StorableIter<'s, Self::StorableT, Self::StorageT> {
+        StorableIter {
+            inner: self.storage().pairs(start, end),
+            phantom: PhantomData,
+        }
+    }
+
+    fn keys<'s>(
+        &'s self,
+        start: Option<&[u8]>,
+        end: Option<&[u8]>,
+    ) -> StorableKeys<'s, Self::StorableT, Self::StorageT> {
+        StorableKeys {
+            inner: self.storage().keys(start, end),
+            phantom: PhantomData,
+        }
+    }
+
+    fn values<'s>(
+        &'s self,
+        start: Option<&[u8]>,
+        end: Option<&[u8]>,
+    ) -> StorableValues<'s, Self::StorableT, Self::StorageT> {
+        StorableValues {
+            inner: self.storage().values(start, end),
+            phantom: PhantomData,
+        }
+    }
+}
 
 pub struct StorableIter<'i, S, B>
 where
@@ -52,8 +99,44 @@ where
     }
 }
 
-#[derive(Debug, PartialEq)]
-pub enum KVDecodeError<V> {
-    Key,
-    Value(V),
+pub struct StorableKeys<'i, S, B>
+where
+    S: Storable,
+    B: IterableStorage + 'i,
+{
+    inner: B::KeysIterator<'i>,
+    phantom: PhantomData<S>,
+}
+
+impl<'i, S, B> Iterator for StorableKeys<'i, S, B>
+where
+    S: Storable,
+    B: IterableStorage + 'i,
+{
+    type Item = Result<S::Key, KeyDecodeError>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next().map(|k| S::decode_key(&k))
+    }
+}
+
+pub struct StorableValues<'i, S, B>
+where
+    S: Storable,
+    B: IterableStorage + 'i,
+{
+    inner: B::ValuesIterator<'i>,
+    phantom: PhantomData<S>,
+}
+
+impl<'i, S, B> Iterator for StorableValues<'i, S, B>
+where
+    S: Storable,
+    B: IterableStorage + 'i,
+{
+    type Item = Result<S::Value, S::ValueDecodeError>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next().map(|v| S::decode_value(&v))
+    }
 }
