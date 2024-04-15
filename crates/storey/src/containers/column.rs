@@ -207,3 +207,35 @@ pub enum LenError {
     #[error("inconsistent state")]
     InconsistentState,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use mocks::backend::TestStorage;
+    use mocks::encoding::TestEncoding;
+
+    #[test]
+    fn column() {
+        let mut storage = TestStorage::new();
+
+        let column = Column::<u64, TestEncoding>::new(&[0]);
+        let mut access = column.access(&mut storage);
+
+        access.push(&1337).unwrap();
+        access.push(&42).unwrap();
+
+        assert_eq!(access.get(0).unwrap(), Some(1337));
+        assert_eq!(access.get(1).unwrap(), Some(42));
+        assert_eq!(access.get(2).unwrap(), None);
+        assert_eq!(access.len().unwrap(), 2);
+
+        access.remove(0).unwrap();
+        assert_eq!(access.update(0, &9001), Err(UpdateError::NotFound));
+        access.update(1, &9001).unwrap();
+
+        assert_eq!(access.get(0).unwrap(), None);
+        assert_eq!(access.get(1).unwrap(), Some(9001));
+        assert_eq!(access.len().unwrap(), 1);
+    }
+}

@@ -204,24 +204,22 @@ where
 mod tests {
     use super::*;
 
-    // TODO: move TestStorage and use it for these unit tests?
+    use mocks::backend::TestStorage;
 
-    // use crate::backend::TestStorage;
+    #[test]
+    fn storage_branch() {
+        let mut storage = TestStorage::new();
+        let mut branch = StorageBranch::new(&mut storage, b"foo".to_vec());
 
-    // #[test]
-    // fn storage_branch() {
-    //     let storage = TestStorage::new();
-    //     let branch = StorageBranch::new(&storage, b"foo".to_vec());
+        branch.set(b"bar", b"baz");
+        branch.set(b"qux", b"quux");
 
-    //     branch.set(b"bar", b"baz");
-    //     branch.set(b"qux", b"quux");
+        assert_eq!(storage.get(b"bar"), None);
+        assert_eq!(storage.get(b"qux"), None);
 
-    //     assert_eq!(storage.get(b"bar"), None);
-    //     assert_eq!(storage.get(b"qux"), None);
-
-    //     assert_eq!(storage.get(b"foobar"), Some(b"baz".to_vec()));
-    //     assert_eq!(storage.get(b"fooqux"), Some(b"quux".to_vec()));
-    // }
+        assert_eq!(storage.get(b"foobar"), Some(b"baz".to_vec()));
+        assert_eq!(storage.get(b"fooqux"), Some(b"quux".to_vec()));
+    }
 
     #[test]
     fn sub_bounds_no_prefix() {

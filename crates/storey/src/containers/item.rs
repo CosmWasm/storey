@@ -89,3 +89,27 @@ where
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use mocks::backend::TestStorage;
+    use mocks::encoding::TestEncoding;
+
+    #[test]
+    fn item() {
+        let mut storage = TestStorage::new();
+
+        let item0 = Item::<u64, TestEncoding>::new(&[0]);
+        item0.access(&mut storage).set(&42).unwrap();
+
+        let item1 = Item::<u64, TestEncoding>::new(&[1]);
+        let access1 = item1.access(&storage);
+
+        assert_eq!(item0.access(&storage).get().unwrap(), Some(42));
+        assert_eq!(storage.get(&[0]), Some(42u64.to_le_bytes().to_vec()));
+        assert_eq!(access1.get().unwrap(), None);
+        assert_eq!(storage.get(&[1]), None);
+    }
+}
