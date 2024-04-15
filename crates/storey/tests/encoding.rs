@@ -1,5 +1,4 @@
-mod common;
-
+use mocks as _;
 use storey::encoding::{DecodableWith as _, EncodableWith as _};
 
 #[test]

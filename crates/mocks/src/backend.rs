@@ -1,6 +1,6 @@
 use std::{cell::UnsafeCell, collections::BTreeMap};
 
-use storey::storage::IterableStorage as _;
+use storey_storage::IterableStorage as _;
 
 // `UnsafeCell` is needed here to implement interior mutability.
 // https://doc.rust-lang.org/book/ch15-05-interior-mutability.html
@@ -18,6 +18,12 @@ impl TestStorage {
     }
 }
 
+impl Default for TestStorage {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 // Safety: in each of the unsafe blocks in this file, we drop the reference to
 // the BTreeMap before the function returns, so we can guarantee that no two references
 // to it exist at the same time.
@@ -25,14 +31,14 @@ impl TestStorage {
 // Moreover, we can further guarantee that the dereference is valid because the data
 // is always initialized during construction.
 
-impl storey::storage::StorageBackend for TestStorage {
+impl storey_storage::StorageBackend for TestStorage {
     fn get(&self, key: &[u8]) -> Option<Vec<u8>> {
         // Safety: see above
         unsafe { (*self.0.get()).get(key).cloned() }
     }
 }
 
-impl storey::storage::StorageBackendMut for TestStorage {
+impl storey_storage::StorageBackendMut for TestStorage {
     fn set(&mut self, key: &[u8], value: &[u8]) {
         // Safety: see above
         unsafe {
@@ -48,7 +54,7 @@ impl storey::storage::StorageBackendMut for TestStorage {
     }
 }
 
-impl storey::storage::IterableStorage for TestStorage {
+impl storey_storage::IterableStorage for TestStorage {
     type KeysIterator<'a> = Box<dyn DoubleEndedIterator<Item = Vec<u8>> + 'a>;
     type ValuesIterator<'a> = Box<dyn DoubleEndedIterator<Item = Vec<u8>> + 'a>;
     type PairsIterator<'a> = Box<dyn DoubleEndedIterator<Item = (Vec<u8>, Vec<u8>)> + 'a>;
@@ -92,7 +98,7 @@ impl storey::storage::IterableStorage for TestStorage {
     }
 }
 
-impl storey::storage::RevIterableStorage for TestStorage {
+impl storey_storage::RevIterableStorage for TestStorage {
     type RevKeysIterator<'a> = Box<dyn Iterator<Item = Vec<u8>> + 'a>;
     type RevValuesIterator<'a> = Box<dyn Iterator<Item = Vec<u8>> + 'a>;
     type RevPairsIterator<'a> = Box<dyn Iterator<Item = (Vec<u8>, Vec<u8>)> + 'a>;

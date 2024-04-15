@@ -1,10 +1,8 @@
-mod common;
-
 use storey::containers::{Column, Item, IterableAccessor as _, Map};
 use storey::storage::Storage as _;
 
-use common::backend::TestStorage;
-use common::encoding::TestEncoding;
+use mocks::backend::TestStorage;
+use mocks::encoding::TestEncoding;
 
 #[test]
 fn item() {
