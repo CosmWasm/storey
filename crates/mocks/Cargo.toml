@@ -1,10 +1,8 @@
 [package]
-name = "storey"
-description = "Storage abstractions for blockchains"
-readme = "../../README.md"
+name = "mocks"
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.65" # https://caniuse.rs/features/generic_associated_types
+publish = false
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
@@ -13,10 +11,5 @@ categories.workspace = true
 keywords.workspace = true
 
 [dependencies]
-thiserror = "1"
-
 storey-encoding.workspace = true
 storey-storage.workspace = true
-
-[dev-dependencies]
-mocks = { path = "../mocks" }

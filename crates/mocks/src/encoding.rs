@@ -1,4 +1,4 @@
-use storey::encoding::{Cover, DecodableWithImpl, EncodableWithImpl, Encoding};
+use storey_encoding::{Cover, DecodableWithImpl, EncodableWithImpl, Encoding};
 
 // An implementation of an encoding used for tests.
 //

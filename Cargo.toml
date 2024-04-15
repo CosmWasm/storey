@@ -12,3 +12,5 @@ keywords = ["CosmWasm"]
 
 [workspace.dependencies]
 storey = { path = "crates/storey", version = "0.1" }
+storey-encoding = { path = "crates/storey-encoding", version = "0.1" }
+storey-storage = { path = "crates/storey-storage", version = "0.1" }

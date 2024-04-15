@@ -1,12 +1,10 @@
-mod common;
-
 #[test]
 fn storage_backend() {
     // TODO: split this into multiple tests?
 
     use storey::storage::{IterableStorage as _, RevIterableStorage as _, StorageMut as _};
 
-    let mut storage = common::backend::TestStorage::new();
+    let mut storage = mocks::backend::TestStorage::new();
 
     storage.set(&[0], b"bar");
     storage.set(&[1], b"baz");
@@ -105,7 +103,7 @@ fn storage_backend() {
 fn metadata() {
     use storey::storage::StorageMut as _;
 
-    let mut storage = common::backend::TestStorage::new();
+    let mut storage = mocks::backend::TestStorage::new();
     storage.set_meta(&[0], b"meta");
 
     assert_eq!(storey::storage::StorageBackend::get(&storage, &[0]), None);
