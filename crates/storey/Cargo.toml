@@ -2,15 +2,18 @@
 name = "storey"
 description = "Storage abstractions for blockchains"
 readme = "../../README.md"
-authors = { workspace = true }
-repository = { workspace = true }
-homepage = { workspace = true }
-categories = { workspace = true }
-keywords = { workspace = true }
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.65" # https://caniuse.rs/features/generic_associated_types
-license = { workspace = true }
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+categories.workspace = true
+keywords.workspace = true
 
 [dependencies]
 thiserror = "1"
+
+storey-encoding = { version = "0.1.0", path = "../storey-encoding" }
+storey-storage = { version = "0.1.0", path = "../storey-storage" }

@@ -1,4 +1,4 @@
-use super::{Storage, StorageMut};
+use super::storage::{Storage, StorageMut};
 
 pub trait StorageBackend {
     fn get(&self, key: &[u8]) -> Option<Vec<u8>>;

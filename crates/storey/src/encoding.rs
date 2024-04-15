@@ -94,10 +94,7 @@
 
 /// A trait for types that serve as "markers" for a particular encoding.
 /// These types are expected to be empty structs.
-pub trait Encoding {
-    type EncodeError;
-    type DecodeError;
-}
+pub use storey_encoding::Encoding;
 
 /// A trait for types that can be encoded with a particular encoding.
 ///
@@ -109,9 +106,7 @@ pub trait Encoding {
 /// [See the module-level documentation for an example.](self)
 ///
 /// [sealed]: https://rust-lang.github.io/api-guidelines/future-proofing.html#sealed-traits-protect-against-downstream-implementations-c-sealed
-pub trait EncodableWith<E: Encoding>: sealed::SealedE<E> {
-    fn encode(&self) -> Result<Vec<u8>, E::EncodeError>;
-}
+pub use storey_encoding::EncodableWith;
 
 /// A trait for implementing [`EncodableWith`] for a particular encoding.
 ///
@@ -122,19 +117,7 @@ pub trait EncodableWith<E: Encoding>: sealed::SealedE<E> {
 /// rules.
 ///
 /// [See the module-level documentation for usage.](self)
-
-pub trait EncodableWithImpl<E: Encoding> {
-    fn encode_impl(self) -> Result<Vec<u8>, E::EncodeError>;
-}
-
-impl<E: Encoding, T> EncodableWith<E> for T
-where
-    for<'a> Cover<&'a T>: EncodableWithImpl<E>,
-{
-    fn encode(&self) -> Result<Vec<u8>, <E as Encoding>::EncodeError> {
-        Cover(self).encode_impl()
-    }
-}
+pub use storey_encoding::EncodableWithImpl;
 
 /// A trait for types that can be decoded with a particular encoding.
 ///
@@ -146,9 +129,7 @@ where
 /// [See the module-level documentation for an example.](self)
 ///
 /// [sealed]: https://rust-lang.github.io/api-guidelines/future-proofing.html#sealed-traits-protect-against-downstream-implementations-c-sealed
-pub trait DecodableWith<E: Encoding>: Sized + sealed::SealedD<E> {
-    fn decode(data: &[u8]) -> Result<Self, E::DecodeError>;
-}
+pub use storey_encoding::DecodableWith;
 
 /// A trait for implementing [`DecodableWith`] for a particular encoding.
 ///
@@ -159,38 +140,7 @@ pub trait DecodableWith<E: Encoding>: Sized + sealed::SealedD<E> {
 /// rules.
 ///
 /// [See the module-level documentation for usage.](self)
-
-pub trait DecodableWithImpl<E: Encoding>: Sized {
-    fn decode_impl(data: &[u8]) -> Result<Self, E::DecodeError>;
-}
-
-impl<E: Encoding, T> DecodableWith<E> for T
-where
-    Cover<T>: DecodableWithImpl<E>,
-{
-    fn decode(data: &[u8]) -> Result<Self, <E as Encoding>::DecodeError> {
-        let wrapper = <Cover<Self>>::decode_impl(data)?;
-        Ok(wrapper.0)
-    }
-}
-
-mod sealed {
-    // This module is private to the crate. It's used to seal the `EncodableWith` and
-    // `DecodableWith` traits, so that the only way they can be implemented outside
-    // this crate is through the blanket implementations provided by `EncodableWithImpl`
-    // and `DecodableWithImpl`.
-    //
-    // More information on sealed traits:
-    // https://rust-lang.github.io/api-guidelines/future-proofing.html#sealed-traits-protect-against-downstream-implementations-c-sealed
-
-    use super::*;
-
-    pub trait SealedE<E> {}
-    pub trait SealedD<E> {}
-
-    impl<E: Encoding, T> SealedE<E> for T where for<'a> Cover<&'a T>: EncodableWithImpl<E> {}
-    impl<E: Encoding, T> SealedD<E> for T where Cover<T>: DecodableWithImpl<E> {}
-}
+pub use storey_encoding::DecodableWithImpl;
 
 /// A wrapper type used to [cover] type arguments when providing blanket implementations of
 /// [`EncodableWithImpl`] and [`DecodableWithImpl`].
@@ -205,4 +155,4 @@ mod sealed {
 ///
 /// [orphan rules]: https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules
 /// [cover]: https://doc.rust-lang.org/reference/glossary.html#uncovered-type
-pub struct Cover<T>(pub T);
+pub use storey_encoding::Cover;
