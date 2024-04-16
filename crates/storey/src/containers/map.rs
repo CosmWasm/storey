@@ -148,3 +148,67 @@ impl Key for str {
         self.as_bytes()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use crate::containers::Item;
+
+    use mocks::backend::TestStorage;
+    use mocks::encoding::TestEncoding;
+    use storey_storage::Storage as _;
+
+    #[test]
+    fn map() {
+        let mut storage = TestStorage::new();
+
+        let map = Map::<String, Item<u64, TestEncoding>>::new(&[0]);
+
+        map.access(&mut storage)
+            .entry_mut("foo")
+            .set(&1337)
+            .unwrap();
+
+        assert_eq!(map.access(&storage).entry("foo").get().unwrap(), Some(1337));
+        assert_eq!(
+            storage.get(&[0, 3, 102, 111, 111]),
+            Some(1337u64.to_le_bytes().to_vec())
+        );
+        assert_eq!(map.access(&storage).entry("bar").get().unwrap(), None);
+    }
+
+    #[test]
+    fn map_of_map() {
+        let mut storage = TestStorage::new();
+
+        let map = Map::<String, Map<String, Item<u64, TestEncoding>>>::new(&[0]);
+
+        map.access(&mut storage)
+            .entry_mut("foo")
+            .entry_mut("bar")
+            .set(&1337)
+            .unwrap();
+
+        assert_eq!(
+            map.access(&storage)
+                .entry("foo")
+                .entry("bar")
+                .get()
+                .unwrap(),
+            Some(1337)
+        );
+        assert_eq!(
+            storage.get(&[0, 3, 102, 111, 111, 3, 98, 97, 114]),
+            Some(1337u64.to_le_bytes().to_vec())
+        );
+        assert_eq!(
+            map.access(&storage)
+                .entry("foo")
+                .entry("baz")
+                .get()
+                .unwrap(),
+            None
+        );
+    }
+}
