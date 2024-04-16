@@ -263,4 +263,64 @@ mod tests {
             (Some(b"foo".to_vec()), Some(b"fop".to_vec()))
         );
     }
+
+    #[test]
+    fn pairs() {
+        let mut storage = TestStorage::new();
+        let mut branch = StorageBranch::new(&mut storage, b"foo".to_vec());
+
+        branch.set(b"bar", b"baz");
+        branch.set(b"qux", b"quux");
+
+        let mut iter = branch.pairs(None, None);
+        assert_eq!(iter.next(), Some((b"bar".to_vec(), b"baz".to_vec())));
+        assert_eq!(iter.next(), Some((b"qux".to_vec(), b"quux".to_vec())));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn keys() {
+        let mut storage = TestStorage::new();
+        let mut branch = StorageBranch::new(&mut storage, b"foo".to_vec());
+
+        branch.set(b"bar", b"baz");
+        branch.set(b"qux", b"quux");
+
+        let mut iter = branch.keys(None, None);
+        assert_eq!(iter.next(), Some(b"bar".to_vec()));
+        assert_eq!(iter.next(), Some(b"qux".to_vec()));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn values() {
+        let mut storage = TestStorage::new();
+        let mut branch = StorageBranch::new(&mut storage, b"foo".to_vec());
+
+        branch.set(b"bar", b"baz");
+        branch.set(b"qux", b"quux");
+
+        let mut iter = branch.values(None, None);
+        assert_eq!(iter.next(), Some(b"baz".to_vec()));
+        assert_eq!(iter.next(), Some(b"quux".to_vec()));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn meta() {
+        let mut storage = TestStorage::new();
+        let mut branch = StorageBranch::new(&mut storage, b"foo".to_vec());
+
+        branch.set_meta(b"bar", b"baz");
+        branch.set_meta(b"qux", b"quux");
+
+        assert_eq!(storage.get_meta(b"bar"), None);
+        assert_eq!(storage.get_meta(b"qux"), None);
+
+        assert_eq!(storage.get_meta(b"foobar"), Some(b"baz".to_vec()));
+        assert_eq!(storage.get_meta(b"fooqux"), Some(b"quux".to_vec()));
+
+        assert_eq!(storage.get(b"foobar"), None);
+        assert_eq!(storage.get(b"fooqux"), None);
+    }
 }
