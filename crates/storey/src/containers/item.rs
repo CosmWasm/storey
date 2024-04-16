@@ -98,7 +98,7 @@ mod tests {
     use mocks::encoding::TestEncoding;
 
     #[test]
-    fn item() {
+    fn basic() {
         let mut storage = TestStorage::new();
 
         let item0 = Item::<u64, TestEncoding>::new(&[0]);

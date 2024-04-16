@@ -216,7 +216,7 @@ mod tests {
     use mocks::encoding::TestEncoding;
 
     #[test]
-    fn column() {
+    fn basic() {
         let mut storage = TestStorage::new();
 
         let column = Column::<u64, TestEncoding>::new(&[0]);
@@ -237,5 +237,42 @@ mod tests {
         assert_eq!(access.get(0).unwrap(), None);
         assert_eq!(access.get(1).unwrap(), Some(9001));
         assert_eq!(access.len().unwrap(), 1);
+    }
+
+    #[test]
+    fn iteration() {
+        let mut storage = TestStorage::new();
+
+        let column = Column::<u64, TestEncoding>::new(&[0]);
+        let mut access = column.access(&mut storage);
+
+        access.push(&1337).unwrap();
+        access.push(&42).unwrap();
+        access.push(&9001).unwrap();
+        access.remove(1).unwrap();
+
+        assert_eq!(
+            access
+                .pairs(None, None)
+                .collect::<Result<Vec<_>, _>>()
+                .unwrap(),
+            vec![(0, 1337), (2, 9001)]
+        );
+
+        assert_eq!(
+            access
+                .keys(None, None)
+                .collect::<Result<Vec<_>, _>>()
+                .unwrap(),
+            vec![0, 2]
+        );
+
+        assert_eq!(
+            access
+                .values(None, None)
+                .collect::<Result<Vec<_>, _>>()
+                .unwrap(),
+            vec![1337, 9001]
+        );
     }
 }

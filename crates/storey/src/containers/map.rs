@@ -179,36 +179,59 @@ mod tests {
     }
 
     #[test]
-    fn map_of_map() {
+    fn pairs() {
         let mut storage = TestStorage::new();
 
-        let map = Map::<String, Map<String, Item<u64, TestEncoding>>>::new(&[0]);
+        let map = Map::<String, Item<u64, TestEncoding>>::new(&[0]);
+        let mut access = map.access(&mut storage);
 
-        map.access(&mut storage)
-            .entry_mut("foo")
-            .entry_mut("bar")
-            .set(&1337)
+        access.entry_mut("foo").set(&1337).unwrap();
+        access.entry_mut("bar").set(&42).unwrap();
+
+        let items = access
+            .pairs(None, None)
+            .collect::<Result<Vec<_>, _>>()
             .unwrap();
+        assert_eq!(
+            items,
+            vec![
+                (("bar".to_string(), ()), 42),
+                (("foo".to_string(), ()), 1337)
+            ]
+        );
+    }
 
-        assert_eq!(
-            map.access(&storage)
-                .entry("foo")
-                .entry("bar")
-                .get()
-                .unwrap(),
-            Some(1337)
-        );
-        assert_eq!(
-            storage.get(&[0, 3, 102, 111, 111, 3, 98, 97, 114]),
-            Some(1337u64.to_le_bytes().to_vec())
-        );
-        assert_eq!(
-            map.access(&storage)
-                .entry("foo")
-                .entry("baz")
-                .get()
-                .unwrap(),
-            None
-        );
+    #[test]
+    fn keys() {
+        let mut storage = TestStorage::new();
+
+        let map = Map::<String, Item<u64, TestEncoding>>::new(&[0]);
+        let mut access = map.access(&mut storage);
+
+        access.entry_mut("foo").set(&1337).unwrap();
+        access.entry_mut("bar").set(&42).unwrap();
+
+        let keys = access
+            .keys(None, None)
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+        assert_eq!(keys, vec![("bar".to_string(), ()), ("foo".to_string(), ())])
+    }
+
+    #[test]
+    fn values() {
+        let mut storage = TestStorage::new();
+
+        let map = Map::<String, Item<u64, TestEncoding>>::new(&[0]);
+        let mut access = map.access(&mut storage);
+
+        access.entry_mut("foo").set(&1337).unwrap();
+        access.entry_mut("bar").set(&42).unwrap();
+
+        let values = access
+            .values(None, None)
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+        assert_eq!(values, vec![42, 1337])
     }
 }
