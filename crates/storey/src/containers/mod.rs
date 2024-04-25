@@ -56,9 +56,11 @@ pub trait Storable {
     fn decode_value(value: &[u8]) -> Result<Self::Value, Self::ValueDecodeError>;
 }
 
+/// A key decoding error.
 #[derive(Debug, PartialEq)]
 pub struct KeyDecodeError;
 
+// A key-value pair decoding error.
 #[derive(Debug, PartialEq)]
 pub enum KVDecodeError<V> {
     Key,
@@ -116,6 +118,7 @@ pub trait IterableAccessor {
     }
 }
 
+/// The iterator over key-value pairs in a collection.
 pub struct StorableIter<'i, S, B>
 where
     S: Storable,
@@ -143,6 +146,7 @@ where
     }
 }
 
+/// The iterator over keys in a collection.
 pub struct StorableKeys<'i, S, B>
 where
     S: Storable,
@@ -164,6 +168,7 @@ where
     }
 }
 
+/// The iterator over values in a collection.
 pub struct StorableValues<'i, S, B>
 where
     S: Storable,
