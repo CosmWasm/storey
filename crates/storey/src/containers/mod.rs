@@ -65,12 +65,21 @@ pub enum KVDecodeError<V> {
     Value(V),
 }
 
+/// A trait for collection accessors (see [`Storable::AccessorT`]) that provide iteration over
+/// their contents.
 pub trait IterableAccessor {
+    /// The [`Storable`] type this accessor is associated with.
     type StorableT: Storable;
+
+    /// The [`Storage`] type this accessor is associated with.
+    ///
+    /// [`Storage`]: crate::storage::Storage
     type StorageT: IterableStorage;
 
+    /// Get a reference to the storage this accessor is associated with.
     fn storage(&self) -> &Self::StorageT;
 
+    /// Iterate over key-value pairs in this collection.
     fn pairs<'s>(
         &'s self,
         start: Option<&[u8]>,
@@ -82,6 +91,7 @@ pub trait IterableAccessor {
         }
     }
 
+    /// Iterate over keys in this collection.
     fn keys<'s>(
         &'s self,
         start: Option<&[u8]>,
@@ -93,6 +103,7 @@ pub trait IterableAccessor {
         }
     }
 
+    /// Iterate over values in this collection.
     fn values<'s>(
         &'s self,
         start: Option<&[u8]>,
