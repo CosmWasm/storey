@@ -1,3 +1,6 @@
+//! This module contains both the traits for implementing collections/containers, as well as a
+//! few fundamental collections/containers themselves.
+
 pub mod column;
 mod item;
 mod map;
@@ -10,16 +13,46 @@ pub use map::{Map, MapAccess};
 
 use crate::storage::IterableStorage;
 
+/// The fundamental trait every collection/container should implement.
 pub trait Storable {
+    /// The accessor type for this collection/container. An accessor is a type that provides
+    /// methods for reading and writing to the collection/container and encapsulates the
+    /// specific [`Storage`] type used (the `S` type parameter here).
+    ///
+    /// [`Storage`]: crate::storage::Storage
     type AccessorT<S>;
+
+    /// The Key type for this collection/container. This is the type that will be used in
+    /// key iteration.
+    ///
+    /// For composable collections this is the "full" key, e.g. for [`Map`]
+    /// this is a tuple of the key and the sub-key.
+    ///
+    /// Containers that store one item and don't manage subkeys should use the `()` type here.
     type Key;
+
+    /// The Value type for this collection/container. This is the type that will be used for
+    /// value iteration.
     type Value;
+
+    /// The error type for decoding values.
     type ValueDecodeError;
 
+    /// Create an accessor for this collection/container, given a [`Storage`] implementation.
+    ///
+    /// [`Storage`]: crate::storage::Storage
     fn access_impl<S>(storage: S) -> Self::AccessorT<S>;
 
+    /// Decode a key from a byte slice.
+    ///
+    /// This method is used in key iteration to provide a typed key rather than raw bytes
+    /// to the user.
     fn decode_key(key: &[u8]) -> Result<Self::Key, KeyDecodeError>;
 
+    /// Decode a value from a byte slice.
+    ///
+    /// This method is used in value iteration to provide a typed value rather than raw bytes
+    /// to the user.
     fn decode_value(value: &[u8]) -> Result<Self::Value, Self::ValueDecodeError>;
 }
 
