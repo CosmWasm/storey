@@ -1,11 +1,32 @@
 use crate::storage::{IterableStorage, RevIterableStorage, Storage, StorageMut};
 
+/// A type representing a storage namespace created by applying a prefix to all keys.
+///
+/// This type implements the [`Storage`] and [`StorageMut`] traits, making the fact a prefix
+/// is applied transparent to the user.
+///
+/// You don't need to be aware of this type unless implementing a custom container.
+///
+/// # Example
+/// ```
+/// # use mocks::backend::TestStorage;
+/// use storey::storage::{Storage as _, StorageMut as _, StorageBranch};
+///
+/// let mut storage = TestStorage::new();
+/// let mut branch = StorageBranch::new(&mut storage, b"foo".to_vec());
+///
+/// branch.set(b"bar", b"baz");
+///
+/// assert_eq!(branch.get(b"bar"), Some(b"baz".to_vec()));
+/// assert_eq!(storage.get(b"foobar"), Some(b"baz".to_vec()));
+/// ```
 pub struct StorageBranch<S> {
     backend: S,
     prefix: Vec<u8>,
 }
 
 impl<S> StorageBranch<S> {
+    /// Creates a new `StorageBranch` instance given a prefix.
     pub fn new(backend: S, prefix: Vec<u8>) -> Self {
         Self { backend, prefix }
     }
@@ -165,6 +186,7 @@ fn sub_bounds(
     }
 }
 
+/// An iterator over the keys of a `StorageBranch`.
 pub struct BranchKeysIter<I> {
     inner: I,
     prefix_len: usize,
@@ -181,6 +203,7 @@ where
     }
 }
 
+/// An iterator over the key-value pairs of a `StorageBranch`.
 pub struct BranchKVIter<I> {
     inner: I,
     prefix_len: usize,
