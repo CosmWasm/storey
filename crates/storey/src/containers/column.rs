@@ -65,6 +65,12 @@ where
     /// # use mocks::backend::TestStorage;
     /// use storey::containers::Column;
     ///
+    /// // immutable accessor
+    /// let storage = TestStorage::new();
+    /// let column = Column::<u64, TestEncoding>::new(&[0]);
+    /// let access = column.access(&storage);
+    ///
+    /// // mutable accessor
     /// let mut storage = TestStorage::new();
     /// let column = Column::<u64, TestEncoding>::new(&[0]);
     /// let mut access = column.access(&mut storage);

@@ -6,6 +6,23 @@ use crate::storage::{Storage, StorageMut};
 
 use super::{KeyDecodeError, Storable};
 
+/// A single item in the storage.
+///
+/// This simple container doesn't manage a namespace of keys, but simply stores a single
+/// value under a single key.
+///
+/// # Example
+/// ```
+/// # use mocks::encoding::TestEncoding;
+/// # use mocks::backend::TestStorage;
+/// use storey::containers::Item;
+///
+/// let mut storage = TestStorage::new();
+/// let item = Item::<u64, TestEncoding>::new(&[0]);
+///
+/// item.access(&mut storage).set(&42).unwrap();
+/// assert_eq!(item.access(&storage).get().unwrap(), Some(42));
+/// ```
 pub struct Item<T, E> {
     prefix: &'static [u8],
     phantom: PhantomData<(T, E)>,
@@ -16,6 +33,9 @@ where
     E: Encoding,
     T: EncodableWith<E> + DecodableWith<E>,
 {
+    /// Create a new item with the given key.
+    ///
+    /// It is the responsibility of the caller to ensure that the key is unique.
     pub const fn new(prefix: &'static [u8]) -> Self {
         Self {
             prefix,
@@ -23,6 +43,23 @@ where
         }
     }
 
+    /// Acquire an accessor to the item.
+    ///
+    /// # Example
+    /// ```
+    /// # use mocks::encoding::TestEncoding;
+    /// # use mocks::backend::TestStorage;
+    /// use storey::containers::Item;
+    ///
+    /// // immutable accessor
+    /// let storage = TestStorage::new();
+    /// let item = Item::<u64, TestEncoding>::new(&[0]);
+    /// let access = item.access(&storage);
+    ///
+    /// // mutable accessor
+    /// let mut storage = TestStorage::new();
+    /// let item = Item::<u64, TestEncoding>::new(&[0]);
+    /// let mut access = item.access(&mut storage);
     pub fn access<S>(&self, storage: S) -> ItemAccess<E, T, StorageBranch<S>> {
         Self::access_impl(StorageBranch::new(storage, self.prefix.to_vec()))
     }
@@ -58,6 +95,9 @@ where
     }
 }
 
+/// An accessor for an `Item`.
+///
+/// This type provides methods to get and set the value of the item.
 pub struct ItemAccess<E, T, S> {
     storage: S,
     phantom: PhantomData<(E, T)>,
@@ -69,6 +109,34 @@ where
     T: EncodableWith<E> + DecodableWith<E>,
     S: Storage,
 {
+    /// Get the value of the item.
+    ///
+    /// Returns `None` if the item doesn't exist (has not been set yet).
+    ///
+    /// # Examples
+    /// ```
+    /// # use mocks::encoding::TestEncoding;
+    /// # use mocks::backend::TestStorage;
+    /// use storey::containers::Item;
+    ///
+    /// let storage = TestStorage::new();
+    /// let item = Item::<u64, TestEncoding>::new(&[0]);
+    /// let access = item.access(&storage);
+    ///
+    /// assert_eq!(access.get().unwrap(), None);
+    /// ```
+    ///
+    /// ```
+    /// # use mocks::encoding::TestEncoding;
+    /// # use mocks::backend::TestStorage;
+    /// use storey::containers::Item;
+    ///
+    /// let mut storage = TestStorage::new();
+    /// let item = Item::<u64, TestEncoding>::new(&[0]);
+    ///
+    /// item.access(&mut storage).set(&42).unwrap();
+    /// assert_eq!(item.access(&storage).get().unwrap(), Some(42));
+    /// ```
     pub fn get(&self) -> Result<Option<T>, E::DecodeError> {
         self.storage
             .get(&[])
@@ -83,6 +151,20 @@ where
     T: EncodableWith<E> + DecodableWith<E>,
     S: StorageMut,
 {
+    /// Set the value of the item.
+    ///
+    /// # Example
+    /// ```
+    /// # use mocks::encoding::TestEncoding;
+    /// # use mocks::backend::TestStorage;
+    /// use storey::containers::Item;
+    ///
+    /// let mut storage = TestStorage::new();
+    /// let item = Item::<u64, TestEncoding>::new(&[0]);
+    ///
+    /// item.access(&mut storage).set(&42).unwrap();
+    /// assert_eq!(item.access(&storage).get().unwrap(), Some(42));
+    /// ```
     pub fn set(&mut self, value: &T) -> Result<(), E::EncodeError> {
         let bytes = value.encode()?;
         self.storage.set(&[], &bytes);
