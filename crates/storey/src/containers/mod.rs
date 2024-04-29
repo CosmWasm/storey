@@ -60,7 +60,7 @@ pub trait Storable {
 #[derive(Debug, PartialEq)]
 pub struct KeyDecodeError;
 
-// A key-value pair decoding error.
+/// A key-value pair decoding error.
 #[derive(Debug, PartialEq)]
 pub enum KVDecodeError<V> {
     Key,
