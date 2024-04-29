@@ -1,7 +1,7 @@
 //! This module contains both the traits for implementing collections/containers, as well as a
 //! few fundamental collections/containers themselves.
 
-pub mod column;
+mod column;
 mod item;
 mod map;
 
