@@ -49,7 +49,7 @@ where
     /// It is the responsibility of the user to ensure the prefix is unique and does not conflict
     /// with other keys in the storage.
     ///
-    /// The key is used as a prefix for all keys the column itself might generate.
+    /// The key provided here is used as a prefix for all keys the column itself might generate.
     pub const fn new(prefix: &'static [u8]) -> Self {
         Self {
             prefix,
@@ -110,7 +110,7 @@ where
 
 /// An accessor for a `Column`.
 ///
-/// This type provides methods for interacting with the column.
+/// This type provides methods for interacting with the column in storage.
 pub struct ColumnAccess<E, T, S> {
     storage: S,
     phantom: PhantomData<(E, T)>,
