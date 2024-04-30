@@ -1,5 +1,8 @@
 pub trait Encoding {
+    /// The error type returned when encoding fails.
     type EncodeError;
+
+    /// The error type returned when decoding fails.
     type DecodeError;
 }
 
