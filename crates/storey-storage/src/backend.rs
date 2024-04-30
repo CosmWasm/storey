@@ -1,15 +1,30 @@
 use super::storage::{Storage, StorageMut};
 
+/// A trait for immutably accessing a storage backend.
+///
+/// A collection of basic read operations that can be performed on a storage backend.
+///
+/// You should only have to interact with this trait if you are implementing a custom storage backend.
 pub trait StorageBackend {
+    /// Get the value associated with the given key.
     fn get(&self, key: &[u8]) -> Option<Vec<u8>>;
 
+    /// Check if the given key exists in the storage backend.
     fn has(&self, key: &[u8]) -> bool {
         self.get(key).is_some()
     }
 }
 
+/// A trait for mutably accessing a storage backend.
+///
+/// A collection of basic write operations that can be performed on a storage backend.
+///
+/// You should only have to interact with this trait if you are implementing a custom storage backend.
 pub trait StorageBackendMut {
+    /// Set the value associated with the given key.
     fn set(&mut self, key: &[u8], value: &[u8]);
+
+    /// Remove the value associated with the given key.
     fn remove(&mut self, key: &[u8]);
 }
 

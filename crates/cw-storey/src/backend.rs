@@ -1,5 +1,6 @@
 use storey::storage::{StorageBackend, StorageBackendMut};
 
+/// A wrapper around a type implementing [`cosmwasm_std::Storage`] that integrates it with [`storey`].
 pub struct CwStorage<S>(pub S);
 
 impl<S> StorageBackend for CwStorage<S>

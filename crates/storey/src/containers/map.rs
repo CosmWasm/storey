@@ -6,6 +6,42 @@ use crate::storage::StorageBranch;
 use super::IterableAccessor;
 use super::{KeyDecodeError, Storable};
 
+/// A map that stores values of type `V` under keys of type `K`.
+///
+/// The subkeys managed by the map are length-prefixed and appended to the map's prefix.
+///
+/// A map does not directly manage the storage of its values. Instead, it doles out access to
+/// a collection of other containers.
+///
+/// # Examples
+///
+/// ```
+/// # use mocks::encoding::TestEncoding;
+/// # use mocks::backend::TestStorage;
+/// use storey::containers::{Item, Map};
+///
+/// let mut storage = TestStorage::new();
+/// let map = Map::<String, Item<u64, TestEncoding>>::new(&[0]);
+/// let mut access = map.access(&mut storage);
+///
+/// access.entry_mut("foo").set(&1337).unwrap();
+/// assert_eq!(access.entry("foo").get().unwrap(), Some(1337));
+/// assert_eq!(access.entry("bar").get().unwrap(), None);
+/// ```
+///
+/// ```
+/// # use mocks::encoding::TestEncoding;
+/// # use mocks::backend::TestStorage;
+/// use storey::containers::{Item, Map};
+///
+/// let mut storage = TestStorage::new();
+/// let map = Map::<String, Map<String, Item<u64, TestEncoding>>>::new(&[0]);
+/// let mut access = map.access(&mut storage);
+///
+/// access.entry_mut("foo").entry_mut("bar").set(&1337).unwrap();
+/// assert_eq!(access.entry("foo").entry("bar").get().unwrap(), Some(1337));
+/// assert_eq!(access.entry("foo").entry("baz").get().unwrap(), None);
+/// ```
 pub struct Map<K: ?Sized, V> {
     prefix: &'static [u8],
     phantom: PhantomData<(*const K, V)>,
@@ -16,6 +52,12 @@ where
     K: OwnedKey,
     V: Storable,
 {
+    /// Creates a new map with the given prefix.
+    ///
+    /// It is the responsibility of the caller to ensure that the prefix is unique and does not conflict
+    /// with other keys in the storage.
+    ///
+    /// The key provided here is used as a prefix for all keys managed by the map.
     pub const fn new(prefix: &'static [u8]) -> Self {
         Self {
             prefix,
@@ -23,6 +65,24 @@ where
         }
     }
 
+    /// Acquires an accessor for the map.
+    ///
+    /// # Example
+    /// ```
+    /// # use mocks::encoding::TestEncoding;
+    /// # use mocks::backend::TestStorage;
+    /// use storey::containers::{Item, Map};
+    ///
+    /// // immutable access
+    /// let storage = TestStorage::new();
+    /// let map = Map::<String, Item<u64, TestEncoding>>::new(&[0]);
+    /// let access = map.access(&storage);
+    ///
+    /// // mutable access
+    /// let mut storage = TestStorage::new();
+    /// let map = Map::<String, Item<u64, TestEncoding>>::new(&[0]);
+    /// let mut access = map.access(&mut storage);
+    /// ```
     pub fn access<S>(&self, storage: S) -> MapAccess<K, V, StorageBranch<S>> {
         Self::access_impl(StorageBranch::new(storage, self.prefix.to_vec()))
     }
@@ -63,6 +123,9 @@ where
     }
 }
 
+/// An accessor for a map.
+///
+/// The accessor provides methods for interacting with the map in storage.
 pub struct MapAccess<K: ?Sized, V, S> {
     storage: S,
     phantom: PhantomData<(*const K, V)>,
@@ -73,6 +136,33 @@ where
     K: Key,
     V: Storable,
 {
+    /// Returns an immutable accessor for the inner container of this map.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use mocks::encoding::TestEncoding;
+    /// # use mocks::backend::TestStorage;
+    /// use storey::containers::{Item, Map};
+    ///
+    /// let storage = TestStorage::new();
+    /// let map = Map::<String, Item<u64, TestEncoding>>::new(&[0]);
+    /// let access = map.access(&storage);
+    ///
+    /// assert_eq!(access.entry("foo").get().unwrap(), None);
+    /// ```
+    ///
+    /// ```
+    /// # use mocks::encoding::TestEncoding;
+    /// # use mocks::backend::TestStorage;
+    /// use storey::containers::{Item, Map};
+    ///
+    /// let storage = TestStorage::new();
+    /// let map = Map::<String, Map<String, Item<u64, TestEncoding>>>::new(&[0]);
+    /// let access = map.access(&storage);
+    ///
+    /// assert_eq!(access.entry("foo").entry("bar").get().unwrap(), None);
+    /// ```
     pub fn entry<Q>(&self, key: &Q) -> V::AccessorT<StorageBranch<&S>>
     where
         K: Borrow<Q>,
@@ -88,6 +178,35 @@ where
         V::access_impl(StorageBranch::new(&self.storage, key))
     }
 
+    /// Returns a mutable accessor for the inner container of this map.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use mocks::encoding::TestEncoding;
+    /// # use mocks::backend::TestStorage;
+    /// use storey::containers::{Item, Map};
+    ///
+    /// let mut storage = TestStorage::new();
+    /// let map = Map::<String, Item<u64, TestEncoding>>::new(&[0]);
+    /// let mut access = map.access(&mut storage);
+    ///
+    /// access.entry_mut("foo").set(&1337).unwrap();
+    /// assert_eq!(access.entry("foo").get().unwrap(), Some(1337));
+    /// ```
+    ///
+    /// ```
+    /// # use mocks::encoding::TestEncoding;
+    /// # use mocks::backend::TestStorage;
+    /// use storey::containers::{Item, Map};
+    ///
+    /// let mut storage = TestStorage::new();
+    /// let map = Map::<String, Map<String, Item<u64, TestEncoding>>>::new(&[0]);
+    /// let mut access = map.access(&mut storage);
+    ///
+    /// access.entry_mut("foo").entry_mut("bar").set(&1337).unwrap();
+    /// assert_eq!(access.entry("foo").entry("bar").get().unwrap(), Some(1337));
+    /// ```
     pub fn entry_mut<Q>(&mut self, key: &Q) -> V::AccessorT<StorageBranch<&mut S>>
     where
         K: Borrow<Q>,

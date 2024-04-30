@@ -12,6 +12,28 @@ use super::{IterableAccessor, KeyDecodeError, Storable};
 const META_NEXT_IX: &[u8] = &[0];
 const META_LEN: &[u8] = &[1];
 
+/// A collection of rows indexed by `u32` keys. This is somewhat similar to a traditional
+/// database table with an auto-incrementing primary key.
+///
+/// The key is encoded as a big-endian `u32` integer.
+///
+/// # Example
+/// ```
+/// # use mocks::encoding::TestEncoding;
+/// # use mocks::backend::TestStorage;
+/// use storey::containers::Column;
+///
+/// let mut storage = TestStorage::new();
+/// let column = Column::<u64, TestEncoding>::new(&[0]);
+/// let mut access = column.access(&mut storage);
+///
+/// access.push(&1337).unwrap();
+/// access.push(&42).unwrap();
+///
+/// assert_eq!(access.get(0).unwrap(), Some(1337));
+/// assert_eq!(access.get(1).unwrap(), Some(42));
+/// assert_eq!(access.get(2).unwrap(), None);
+/// ```
 pub struct Column<T, E> {
     prefix: &'static [u8],
     phantom: PhantomData<(T, E)>,
@@ -22,6 +44,12 @@ where
     E: Encoding,
     T: EncodableWith<E> + DecodableWith<E>,
 {
+    /// Create a new column associated with the given storage prefix.
+    ///
+    /// It is the responsibility of the user to ensure the prefix is unique and does not conflict
+    /// with other keys in the storage.
+    ///
+    /// The key provided here is used as a prefix for all keys the column itself might generate.
     pub const fn new(prefix: &'static [u8]) -> Self {
         Self {
             prefix,
@@ -29,6 +57,24 @@ where
         }
     }
 
+    /// Acquire an accessor for this column.
+    ///
+    /// # Example
+    /// ```
+    /// # use mocks::encoding::TestEncoding;
+    /// # use mocks::backend::TestStorage;
+    /// use storey::containers::Column;
+    ///
+    /// // immutable accessor
+    /// let storage = TestStorage::new();
+    /// let column = Column::<u64, TestEncoding>::new(&[0]);
+    /// let access = column.access(&storage);
+    ///
+    /// // mutable accessor
+    /// let mut storage = TestStorage::new();
+    /// let column = Column::<u64, TestEncoding>::new(&[0]);
+    /// let mut access = column.access(&mut storage);
+    /// ```
     pub fn access<S>(&self, storage: S) -> ColumnAccess<E, T, StorageBranch<S>> {
         Self::access_impl(StorageBranch::new(storage, self.prefix.to_vec()))
     }
@@ -62,6 +108,9 @@ where
     }
 }
 
+/// An accessor for a `Column`.
+///
+/// This type provides methods for interacting with the column in storage.
 pub struct ColumnAccess<E, T, S> {
     storage: S,
     phantom: PhantomData<(E, T)>,
@@ -87,6 +136,22 @@ where
     T: EncodableWith<E> + DecodableWith<E>,
     S: Storage,
 {
+    /// Get the value associated with the given key.
+    ///
+    /// # Example
+    /// ```
+    /// # use mocks::encoding::TestEncoding;
+    /// # use mocks::backend::TestStorage;
+    /// use storey::containers::Column;
+    ///
+    /// let mut storage = TestStorage::new();
+    /// let column = Column::<u64, TestEncoding>::new(&[0]);
+    /// let mut access = column.access(&mut storage);
+    ///
+    /// access.push(&1337).unwrap();
+    /// assert_eq!(access.get(0).unwrap(), Some(1337));
+    /// assert_eq!(access.get(1).unwrap(), None);
+    /// ```
     pub fn get(&self, key: u32) -> Result<Option<T>, E::DecodeError> {
         self.storage
             .get(&encode_ix(key))
@@ -94,6 +159,25 @@ where
             .transpose()
     }
 
+    /// Get the length of the column. This is the number of elements actually stored,
+    /// taking the possibility of removed elements into account.
+    ///
+    /// # Example
+    /// ```
+    /// # use mocks::encoding::TestEncoding;
+    /// # use mocks::backend::TestStorage;
+    /// use storey::containers::Column;
+    ///
+    /// let mut storage = TestStorage::new();
+    /// let column = Column::<u64, TestEncoding>::new(&[0]);
+    /// let mut access = column.access(&mut storage);
+    ///
+    /// assert_eq!(access.len().unwrap(), 0);
+    ///
+    /// access.push(&1337).unwrap();
+    ///
+    /// assert_eq!(access.len().unwrap(), 1);
+    /// ```
     pub fn len(&self) -> Result<u32, LenError> {
         // TODO: bounds check + error handlinge
 
@@ -109,6 +193,24 @@ where
             .unwrap_or(Ok(0))
     }
 
+    /// Check if the column is empty.
+    ///
+    /// # Example
+    /// ```
+    /// # use mocks::encoding::TestEncoding;
+    /// # use mocks::backend::TestStorage;
+    /// use storey::containers::Column;
+    ///
+    /// let mut storage = TestStorage::new();
+    /// let column = Column::<u64, TestEncoding>::new(&[0]);
+    /// let mut access = column.access(&mut storage);
+    ///
+    /// assert_eq!(access.is_empty().unwrap(), true);
+    ///
+    /// access.push(&1337).unwrap();
+    ///
+    /// assert_eq!(access.is_empty().unwrap(), false);
+    /// ```
     pub fn is_empty(&self) -> Result<bool, LenError> {
         self.len().map(|len| len == 0)
     }
@@ -134,6 +236,21 @@ where
     T: EncodableWith<E> + DecodableWith<E>,
     S: StorageMut + Storage,
 {
+    /// Append a new value to the end of the column.
+    ///
+    /// # Example
+    /// ```
+    /// # use mocks::encoding::TestEncoding;
+    /// # use mocks::backend::TestStorage;
+    /// use storey::containers::Column;
+    ///
+    /// let mut storage = TestStorage::new();
+    /// let column = Column::<u64, TestEncoding>::new(&[0]);
+    /// let mut access = column.access(&mut storage);
+    ///
+    /// access.push(&1337).unwrap();
+    /// access.push(&42).unwrap();
+    /// ```
     pub fn push(&mut self, value: &T) -> Result<(), E::EncodeError> {
         let bytes = value.encode()?;
 
@@ -156,6 +273,24 @@ where
         Ok(())
     }
 
+    /// Update the value associated with the given key.
+    ///
+    /// # Example
+    /// ```
+    /// # use mocks::encoding::TestEncoding;
+    /// # use mocks::backend::TestStorage;
+    /// use storey::containers::Column;
+    ///
+    /// let mut storage = TestStorage::new();
+    /// let column = Column::<u64, TestEncoding>::new(&[0]);
+    /// let mut access = column.access(&mut storage);
+    ///
+    /// access.push(&1337).unwrap();
+    /// assert_eq!(access.get(0).unwrap(), Some(1337));
+    ///
+    /// access.update(0, &9001).unwrap();
+    /// assert_eq!(access.get(0).unwrap(), Some(9001));
+    /// ```
     pub fn update(&mut self, key: u32, value: &T) -> Result<(), UpdateError<E::EncodeError>> {
         self.storage
             .get(&encode_ix(key))
@@ -168,6 +303,26 @@ where
         Ok(())
     }
 
+    /// Remove the value associated with the given key.
+    ///
+    /// This operation leaves behind an empty slot in the column. The key is not reused.
+    ///
+    /// # Example
+    /// ```
+    /// # use mocks::encoding::TestEncoding;
+    /// # use mocks::backend::TestStorage;
+    /// use storey::containers::Column;
+    ///
+    /// let mut storage = TestStorage::new();
+    /// let column = Column::<u64, TestEncoding>::new(&[0]);
+    /// let mut access = column.access(&mut storage);
+    ///
+    /// access.push(&1337).unwrap();
+    /// assert_eq!(access.get(0).unwrap(), Some(1337));
+    ///
+    /// access.remove(0).unwrap();
+    /// assert_eq!(access.get(0).unwrap(), None);
+    /// ```
     pub fn remove(&mut self, key: u32) -> Result<(), RemoveError> {
         self.storage.remove(&encode_ix(key));
 
