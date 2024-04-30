@@ -14,10 +14,10 @@ body = """
 {% endfor %}
 """
 commit_parsers = [
-    { message = "^feat", group = "<!-- 0 -->New featues" },
-    { message = "^changed", group = "<!-- 1 -->Changes" },
+    { message = "^feat", group = "<!-- 0 -->Added" },
+    { message = "^changed", group = "<!-- 1 -->Changed" },
     { message = "^deprecated", group = "<!-- 2 -->Deprecated" },
-    { message = "^fix", group = "<!-- 3 -->Bug fixes" },
+    { message = "^fix", group = "<!-- 3 -->Fixed" },
     { message = "^security", group = "<!-- 4 -->Security" },
     { message = "^docs", group = "<!-- 5 -->Documentation" },
     { message = "^test", group = "<!-- 6 -->Tests" },
