@@ -4,7 +4,7 @@ use crate::encoding::{DecodableWith, EncodableWith, Encoding};
 use crate::storage::StorageBranch;
 use crate::storage::{Storage, StorageMut};
 
-use super::{KeyDecodeError, Storable};
+use super::Storable;
 
 /// A single item in the storage.
 ///
@@ -72,6 +72,7 @@ where
 {
     type AccessorT<S> = ItemAccess<E, T, S>;
     type Key = ();
+    type KeyDecodeError = ItemKeyDecodeError;
     type Value = T;
     type ValueDecodeError = E::DecodeError;
 
@@ -82,11 +83,11 @@ where
         }
     }
 
-    fn decode_key(key: &[u8]) -> Result<(), KeyDecodeError> {
+    fn decode_key(key: &[u8]) -> Result<(), ItemKeyDecodeError> {
         if key.is_empty() {
             Ok(())
         } else {
-            Err(KeyDecodeError)
+            Err(ItemKeyDecodeError)
         }
     }
 
@@ -94,6 +95,10 @@ where
         T::decode(value)
     }
 }
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy, thiserror::Error)]
+#[error("invalid key length, expected empty key")]
+pub struct ItemKeyDecodeError;
 
 /// An accessor for an `Item`.
 ///

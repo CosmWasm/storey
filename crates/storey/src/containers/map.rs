@@ -4,7 +4,7 @@ use crate::storage::IterableStorage;
 use crate::storage::StorageBranch;
 
 use super::IterableAccessor;
-use super::{KeyDecodeError, Storable};
+use super::Storable;
 
 /// A map that stores values of type `V` under keys of type `K`.
 ///
@@ -51,6 +51,7 @@ impl<K, V> Map<K, V>
 where
     K: OwnedKey,
     V: Storable,
+    <V as Storable>::KeyDecodeError: std::fmt::Display,
 {
     /// Creates a new map with the given prefix.
     ///
@@ -92,9 +93,11 @@ impl<K, V> Storable for Map<K, V>
 where
     K: OwnedKey,
     V: Storable,
+    <V as Storable>::KeyDecodeError: std::fmt::Display,
 {
     type AccessorT<S> = MapAccess<K, V, S>;
     type Key = (K, V::Key);
+    type KeyDecodeError = MapKeyDecodeError<V::KeyDecodeError>;
     type Value = V::Value;
     type ValueDecodeError = V::ValueDecodeError;
 
@@ -105,15 +108,16 @@ where
         }
     }
 
-    fn decode_key(key: &[u8]) -> Result<Self::Key, KeyDecodeError> {
-        let len = *key.first().ok_or(KeyDecodeError)? as usize;
+    fn decode_key(key: &[u8]) -> Result<Self::Key, MapKeyDecodeError<V::KeyDecodeError>> {
+        let len = *key.first().ok_or(MapKeyDecodeError::EmptyKey)? as usize;
 
         if key.len() < len + 1 {
-            return Err(KeyDecodeError);
+            return Err(MapKeyDecodeError::KeyTooShort(len));
         }
 
-        let map_key = K::from_bytes(&key[1..len + 1]).map_err(|_| KeyDecodeError)?;
-        let rest = V::decode_key(&key[len + 1..])?;
+        let map_key =
+            K::from_bytes(&key[1..len + 1]).map_err(|_| MapKeyDecodeError::InvalidUtf8)?;
+        let rest = V::decode_key(&key[len + 1..]).map_err(MapKeyDecodeError::Inner)?;
 
         Ok((map_key, rest))
     }
@@ -121,6 +125,22 @@ where
     fn decode_value(value: &[u8]) -> Result<Self::Value, Self::ValueDecodeError> {
         V::decode_value(value)
     }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy, thiserror::Error)]
+#[error("invalid key length, expected empty key")]
+pub enum MapKeyDecodeError<I: std::fmt::Display> {
+    #[error("empty key, expected length prefix (1 byte)")]
+    EmptyKey,
+
+    #[error("key too short, expected {0} bytes after length prefix")]
+    KeyTooShort(usize),
+
+    #[error("invalid UTF8")]
+    InvalidUtf8,
+
+    #[error("sub key decode error: {0}")]
+    Inner(I),
 }
 
 /// An accessor for a map.
@@ -227,6 +247,7 @@ impl<K, V, S> IterableAccessor for MapAccess<K, V, S>
 where
     K: OwnedKey,
     V: Storable,
+    <V as Storable>::KeyDecodeError: std::fmt::Display,
     S: IterableStorage,
 {
     type StorableT = Map<K, V>;

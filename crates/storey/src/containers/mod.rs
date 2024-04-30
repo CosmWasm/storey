@@ -31,6 +31,9 @@ pub trait Storable {
     /// Containers that store one item and don't manage subkeys should use the `()` type here.
     type Key;
 
+    /// The error type for decoding keys.
+    type KeyDecodeError;
+
     /// The Value type for this collection/container. This is the type that will be used for
     /// value iteration.
     type Value;
@@ -47,7 +50,7 @@ pub trait Storable {
     ///
     /// This method is used in key iteration to provide a typed key rather than raw bytes
     /// to the user.
-    fn decode_key(key: &[u8]) -> Result<Self::Key, KeyDecodeError>;
+    fn decode_key(key: &[u8]) -> Result<Self::Key, Self::KeyDecodeError>;
 
     /// Decode a value from a byte slice.
     ///
@@ -56,14 +59,10 @@ pub trait Storable {
     fn decode_value(value: &[u8]) -> Result<Self::Value, Self::ValueDecodeError>;
 }
 
-/// A key decoding error.
-#[derive(Debug, PartialEq)]
-pub struct KeyDecodeError;
-
 /// A key-value pair decoding error.
 #[derive(Debug, PartialEq)]
-pub enum KVDecodeError<V> {
-    Key,
+pub enum KVDecodeError<K, V> {
+    Key(K),
     Value(V),
 }
 
@@ -133,12 +132,12 @@ where
     S: Storable,
     B: IterableStorage + 'i,
 {
-    type Item = Result<(S::Key, S::Value), KVDecodeError<S::ValueDecodeError>>;
+    type Item = Result<(S::Key, S::Value), KVDecodeError<S::KeyDecodeError, S::ValueDecodeError>>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next().map(|(k, v)| -> Self::Item {
             match (S::decode_key(&k), S::decode_value(&v)) {
-                (Err(_), _) => Err(KVDecodeError::Key),
+                (Err(e), _) => Err(KVDecodeError::Key(e)),
                 (_, Err(e)) => Err(KVDecodeError::Value(e)),
                 (Ok(k), Ok(v)) => Ok((k, v)),
             }
@@ -161,7 +160,7 @@ where
     S: Storable,
     B: IterableStorage + 'i,
 {
-    type Item = Result<S::Key, KeyDecodeError>;
+    type Item = Result<S::Key, S::KeyDecodeError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next().map(|k| S::decode_key(&k))

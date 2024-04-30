@@ -7,7 +7,7 @@ use crate::encoding::{DecodableWith, EncodableWith};
 use crate::storage::{IterableStorage, StorageBranch};
 use crate::storage::{Storage, StorageMut};
 
-use super::{IterableAccessor, KeyDecodeError, Storable};
+use super::{IterableAccessor, Storable};
 
 const META_NEXT_IX: &[u8] = &[0];
 const META_LEN: &[u8] = &[1];
@@ -87,6 +87,7 @@ where
 {
     type AccessorT<S> = ColumnAccess<E, T, S>;
     type Key = u32;
+    type KeyDecodeError = ColumnKeyDecodeError;
     type Value = T;
     type ValueDecodeError = E::DecodeError;
 
@@ -97,7 +98,7 @@ where
         }
     }
 
-    fn decode_key(key: &[u8]) -> Result<Self::Key, KeyDecodeError> {
+    fn decode_key(key: &[u8]) -> Result<Self::Key, ColumnKeyDecodeError> {
         let key = decode_ix(key)?;
 
         Ok(key)
@@ -107,6 +108,10 @@ where
         T::decode(value)
     }
 }
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy, thiserror::Error)]
+#[error("invalid key length, expected 4 bytes of big-endian u32")]
+pub struct ColumnKeyDecodeError;
 
 /// An accessor for a `Column`.
 ///
@@ -216,9 +221,9 @@ where
     }
 }
 
-fn decode_ix(key: &[u8]) -> Result<u32, KeyDecodeError> {
+fn decode_ix(key: &[u8]) -> Result<u32, ColumnKeyDecodeError> {
     if key.len() != 4 {
-        return Err(KeyDecodeError);
+        return Err(ColumnKeyDecodeError);
     }
 
     let row_key = u32::from_be_bytes([key[0], key[1], key[2], key[3]]);
