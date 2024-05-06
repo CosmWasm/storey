@@ -263,7 +263,9 @@ pub trait Key {
 }
 
 pub trait OwnedKey: Key {
-    fn from_bytes(bytes: &[u8]) -> Result<Self, ()>
+    type Error;
+
+    fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error>
     where
         Self: Sized;
 }
@@ -274,12 +276,20 @@ impl Key for String {
     }
 }
 
+#[derive(Debug, PartialEq, Eq, Clone, Copy, thiserror::Error)]
+#[error("invalid UTF8")]
+pub struct InvalidUtf8;
+
 impl OwnedKey for String {
-    fn from_bytes(bytes: &[u8]) -> Result<Self, ()>
+    type Error = InvalidUtf8;
+
+    fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error>
     where
         Self: Sized,
     {
-        std::str::from_utf8(bytes).map(String::from).map_err(|_| ())
+        std::str::from_utf8(bytes)
+            .map(String::from)
+            .map_err(|_| InvalidUtf8)
     }
 }
 
