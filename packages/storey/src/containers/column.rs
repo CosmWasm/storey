@@ -9,7 +9,7 @@ use crate::storage::{Storage, StorageMut};
 
 use super::{IterableAccessor, Storable};
 
-const META_NEXT_IX: &[u8] = &[0];
+const META_LAST_IX: &[u8] = &[0];
 const META_LEN: &[u8] = &[1];
 
 /// A collection of rows indexed by `u32` keys. This is somewhat similar to a traditional
@@ -256,18 +256,21 @@ where
     /// access.push(&1337).unwrap();
     /// access.push(&42).unwrap();
     /// ```
-    pub fn push(&mut self, value: &T) -> Result<(), E::EncodeError> {
+    pub fn push(&mut self, value: &T) -> Result<(), PushError<E::EncodeError>> {
         let bytes = value.encode()?;
 
-        let ix = self
+        let ix = match self
             .storage
-            .get_meta(META_NEXT_IX)
+            .get_meta(META_LAST_IX)
             .map(|bytes| u32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]))
-            .unwrap_or(0);
+        {
+            Some(last_ix) => last_ix.checked_add(1).ok_or(PushError::IndexOverflow)?,
+            None => 0,
+        };
 
         self.storage.set(&encode_ix(ix), &bytes);
 
-        self.storage.set_meta(META_NEXT_IX, &(ix + 1).to_be_bytes());
+        self.storage.set_meta(META_LAST_IX, &(ix).to_be_bytes());
         let len = self
             .storage
             .get_meta(META_LEN)
@@ -339,6 +342,20 @@ where
         self.storage.set_meta(META_LEN, &(len - 1).to_be_bytes());
 
         Ok(())
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Error)]
+pub enum PushError<E> {
+    #[error("index overflow")]
+    IndexOverflow,
+    #[error("{0}")]
+    EncodingError(E),
+}
+
+impl<E> From<E> for PushError<E> {
+    fn from(e: E) -> Self {
+        PushError::EncodingError(e)
     }
 }
 
