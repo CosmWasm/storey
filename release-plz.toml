@@ -23,3 +23,10 @@ commit_parsers = [
     { message = "^test", group = "<!-- 6 -->Tests" },
     { message = "^.*", group = "<!-- 7 -->Other" },
 ]
+
+[workspace]
+git_tag_enable = false
+
+[[package]]
+name = "storey"
+git_tag_enable = true
