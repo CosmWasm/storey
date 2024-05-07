@@ -24,7 +24,7 @@ const META_LEN: &[u8] = &[1];
 /// use storey::containers::Column;
 ///
 /// let mut storage = TestStorage::new();
-/// let column = Column::<u64, TestEncoding>::new(&[0]);
+/// let column = Column::<u64, TestEncoding>::new(0);
 /// let mut access = column.access(&mut storage);
 ///
 /// access.push(&1337).unwrap();
@@ -35,7 +35,7 @@ const META_LEN: &[u8] = &[1];
 /// assert_eq!(access.get(2).unwrap(), None);
 /// ```
 pub struct Column<T, E> {
-    prefix: &'static [u8],
+    prefix: u8,
     phantom: PhantomData<(T, E)>,
 }
 
@@ -50,7 +50,7 @@ where
     /// with other keys in the storage.
     ///
     /// The key provided here is used as a prefix for all keys the column itself might generate.
-    pub const fn new(prefix: &'static [u8]) -> Self {
+    pub const fn new(prefix: u8) -> Self {
         Self {
             prefix,
             phantom: PhantomData,
@@ -67,16 +67,16 @@ where
     ///
     /// // immutable accessor
     /// let storage = TestStorage::new();
-    /// let column = Column::<u64, TestEncoding>::new(&[0]);
+    /// let column = Column::<u64, TestEncoding>::new(0);
     /// let access = column.access(&storage);
     ///
     /// // mutable accessor
     /// let mut storage = TestStorage::new();
-    /// let column = Column::<u64, TestEncoding>::new(&[0]);
+    /// let column = Column::<u64, TestEncoding>::new(0);
     /// let mut access = column.access(&mut storage);
     /// ```
     pub fn access<S>(&self, storage: S) -> ColumnAccess<E, T, StorageBranch<S>> {
-        Self::access_impl(StorageBranch::new(storage, self.prefix.to_vec()))
+        Self::access_impl(StorageBranch::new(storage, vec![self.prefix]))
     }
 }
 
@@ -150,7 +150,7 @@ where
     /// use storey::containers::Column;
     ///
     /// let mut storage = TestStorage::new();
-    /// let column = Column::<u64, TestEncoding>::new(&[0]);
+    /// let column = Column::<u64, TestEncoding>::new(0);
     /// let mut access = column.access(&mut storage);
     ///
     /// access.push(&1337).unwrap();
@@ -174,7 +174,7 @@ where
     /// use storey::containers::Column;
     ///
     /// let mut storage = TestStorage::new();
-    /// let column = Column::<u64, TestEncoding>::new(&[0]);
+    /// let column = Column::<u64, TestEncoding>::new(0);
     /// let mut access = column.access(&mut storage);
     ///
     /// assert_eq!(access.len().unwrap(), 0);
@@ -207,7 +207,7 @@ where
     /// use storey::containers::Column;
     ///
     /// let mut storage = TestStorage::new();
-    /// let column = Column::<u64, TestEncoding>::new(&[0]);
+    /// let column = Column::<u64, TestEncoding>::new(0);
     /// let mut access = column.access(&mut storage);
     ///
     /// assert_eq!(access.is_empty().unwrap(), true);
@@ -250,7 +250,7 @@ where
     /// use storey::containers::Column;
     ///
     /// let mut storage = TestStorage::new();
-    /// let column = Column::<u64, TestEncoding>::new(&[0]);
+    /// let column = Column::<u64, TestEncoding>::new(0);
     /// let mut access = column.access(&mut storage);
     ///
     /// access.push(&1337).unwrap();
@@ -290,7 +290,7 @@ where
     /// use storey::containers::Column;
     ///
     /// let mut storage = TestStorage::new();
-    /// let column = Column::<u64, TestEncoding>::new(&[0]);
+    /// let column = Column::<u64, TestEncoding>::new(0);
     /// let mut access = column.access(&mut storage);
     ///
     /// access.push(&1337).unwrap();
@@ -322,7 +322,7 @@ where
     /// use storey::containers::Column;
     ///
     /// let mut storage = TestStorage::new();
-    /// let column = Column::<u64, TestEncoding>::new(&[0]);
+    /// let column = Column::<u64, TestEncoding>::new(0);
     /// let mut access = column.access(&mut storage);
     ///
     /// access.push(&1337).unwrap();
@@ -396,7 +396,7 @@ mod tests {
     fn basic() {
         let mut storage = TestStorage::new();
 
-        let column = Column::<u64, TestEncoding>::new(&[0]);
+        let column = Column::<u64, TestEncoding>::new(0);
         let mut access = column.access(&mut storage);
 
         access.push(&1337).unwrap();
@@ -420,7 +420,7 @@ mod tests {
     fn iteration() {
         let mut storage = TestStorage::new();
 
-        let column = Column::<u64, TestEncoding>::new(&[0]);
+        let column = Column::<u64, TestEncoding>::new(0);
         let mut access = column.access(&mut storage);
 
         access.push(&1337).unwrap();

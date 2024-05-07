@@ -7,7 +7,7 @@ use mocks::encoding::TestEncoding;
 fn map_of_map_iteration() {
     let mut storage = TestStorage::new();
 
-    let map = Map::<String, Map<String, Item<u64, TestEncoding>>>::new(&[0]);
+    let map = Map::<String, Map<String, Item<u64, TestEncoding>>>::new(0);
     let mut access = map.access(&mut storage);
 
     // populate with data
