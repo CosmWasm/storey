@@ -57,10 +57,7 @@ fn map_of_column() {
     assert_eq!(access.entry("bar").get(0).unwrap(), Some(9001));
     assert_eq!(access.entry("bar").len().unwrap(), 1);
 
-    let all = access
-        .pairs(None, None)
-        .collect::<Result<Vec<_>, _>>()
-        .unwrap();
+    let all = access.pairs().collect::<Result<Vec<_>, _>>().unwrap();
     assert_eq!(
         all,
         vec![

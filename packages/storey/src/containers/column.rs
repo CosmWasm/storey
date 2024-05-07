@@ -7,7 +7,7 @@ use crate::encoding::{DecodableWith, EncodableWith};
 use crate::storage::{IterableStorage, StorageBranch};
 use crate::storage::{Storage, StorageMut};
 
-use super::{IterableAccessor, Storable};
+use super::{BoundFor, BoundedIterableAccessor, IterableAccessor, Storable};
 
 const META_LAST_IX: &[u8] = &[0];
 const META_LEN: &[u8] = &[1];
@@ -132,6 +132,20 @@ where
 
     fn storage(&self) -> &Self::StorageT {
         &self.storage
+    }
+}
+
+impl<E, T, S> BoundedIterableAccessor for ColumnAccess<E, T, S>
+where
+    E: Encoding,
+    T: EncodableWith<E> + DecodableWith<E>,
+    S: IterableStorage,
+{
+}
+
+impl<T, E> BoundFor<Column<T, E>> for u32 {
+    fn into_bytes(self) -> Vec<u8> {
+        self.to_be_bytes().to_vec()
     }
 }
 
@@ -429,27 +443,57 @@ mod tests {
         access.remove(1).unwrap();
 
         assert_eq!(
-            access
-                .pairs(None, None)
-                .collect::<Result<Vec<_>, _>>()
-                .unwrap(),
+            access.pairs().collect::<Result<Vec<_>, _>>().unwrap(),
             vec![(0, 1337), (2, 9001)]
         );
 
         assert_eq!(
-            access
-                .keys(None, None)
-                .collect::<Result<Vec<_>, _>>()
-                .unwrap(),
+            access.keys().collect::<Result<Vec<_>, _>>().unwrap(),
             vec![0, 2]
         );
 
         assert_eq!(
+            access.values().collect::<Result<Vec<_>, _>>().unwrap(),
+            vec![1337, 9001]
+        );
+    }
+
+    #[test]
+    fn bounded_iteration() {
+        let mut storage = TestStorage::new();
+
+        let column = Column::<u64, TestEncoding>::new(0);
+        let mut access = column.access(&mut storage);
+
+        access.push(&1337).unwrap();
+        access.push(&42).unwrap();
+        access.push(&9001).unwrap();
+        access.push(&1).unwrap();
+        access.push(&2).unwrap();
+        access.remove(2).unwrap();
+
+        assert_eq!(
             access
-                .values(None, None)
+                .bounded_pairs(Some(1), Some(4))
                 .collect::<Result<Vec<_>, _>>()
                 .unwrap(),
-            vec![1337, 9001]
+            vec![(1, 42), (3, 1)]
+        );
+
+        assert_eq!(
+            access
+                .bounded_keys(Some(1), Some(4))
+                .collect::<Result<Vec<_>, _>>()
+                .unwrap(),
+            vec![1, 3]
+        );
+
+        assert_eq!(
+            access
+                .bounded_values(Some(1), Some(4))
+                .collect::<Result<Vec<_>, _>>()
+                .unwrap(),
+            vec![42, 1]
         );
     }
 }

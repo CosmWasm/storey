@@ -188,12 +188,7 @@ where
         K: Borrow<Q>,
         Q: Key + ?Sized,
     {
-        let len = key.bytes().len();
-        let bytes = key.bytes();
-        let mut key = Vec::with_capacity(len + 1);
-
-        key.push(len as u8);
-        key.extend_from_slice(bytes);
+        let key = length_prefixed_key(key);
 
         V::access_impl(StorageBranch::new(&self.storage, key))
     }
@@ -243,6 +238,17 @@ where
     }
 }
 
+fn length_prefixed_key<K: Key + ?Sized>(key: &K) -> Vec<u8> {
+    let len = key.bytes().len();
+    let bytes = key.bytes();
+    let mut key = Vec::with_capacity(len + 1);
+
+    key.push(len as u8);
+    key.extend_from_slice(bytes);
+
+    key
+}
+
 impl<K, V, S> IterableAccessor for MapAccess<K, V, S>
 where
     K: OwnedKey,
@@ -276,6 +282,12 @@ impl Key for String {
     }
 }
 
+impl Key for str {
+    fn bytes(&self) -> &[u8] {
+        self.as_bytes()
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Clone, Copy, thiserror::Error)]
 #[error("invalid UTF8")]
 pub struct InvalidUtf8;
@@ -290,12 +302,6 @@ impl OwnedKey for String {
         std::str::from_utf8(bytes)
             .map(String::from)
             .map_err(|_| InvalidUtf8)
-    }
-}
-
-impl Key for str {
-    fn bytes(&self) -> &[u8] {
-        self.as_bytes()
     }
 }
 
@@ -338,10 +344,7 @@ mod tests {
         access.entry_mut("foo").set(&1337).unwrap();
         access.entry_mut("bar").set(&42).unwrap();
 
-        let items = access
-            .pairs(None, None)
-            .collect::<Result<Vec<_>, _>>()
-            .unwrap();
+        let items = access.pairs().collect::<Result<Vec<_>, _>>().unwrap();
         assert_eq!(
             items,
             vec![
@@ -361,10 +364,7 @@ mod tests {
         access.entry_mut("foo").set(&1337).unwrap();
         access.entry_mut("bar").set(&42).unwrap();
 
-        let keys = access
-            .keys(None, None)
-            .collect::<Result<Vec<_>, _>>()
-            .unwrap();
+        let keys = access.keys().collect::<Result<Vec<_>, _>>().unwrap();
         assert_eq!(keys, vec![("bar".to_string(), ()), ("foo".to_string(), ())])
     }
 
@@ -378,10 +378,7 @@ mod tests {
         access.entry_mut("foo").set(&1337).unwrap();
         access.entry_mut("bar").set(&42).unwrap();
 
-        let values = access
-            .values(None, None)
-            .collect::<Result<Vec<_>, _>>()
-            .unwrap();
+        let values = access.values().collect::<Result<Vec<_>, _>>().unwrap();
         assert_eq!(values, vec![42, 1337])
     }
 }

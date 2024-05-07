@@ -20,10 +20,7 @@ fn map_of_map_iteration() {
         .unwrap();
 
     // iterate over all items
-    let items = access
-        .pairs(None, None)
-        .collect::<Result<Vec<_>, _>>()
-        .unwrap();
+    let items = access.pairs().collect::<Result<Vec<_>, _>>().unwrap();
     assert_eq!(
         items,
         vec![
@@ -36,7 +33,7 @@ fn map_of_map_iteration() {
     // iterate over items under "foo"
     let items = access
         .entry("foo")
-        .pairs(None, None)
+        .pairs()
         .collect::<Result<Vec<_>, _>>()
         .unwrap();
     assert_eq!(

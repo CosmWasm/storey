@@ -68,7 +68,7 @@ pub enum KVDecodeError<K, V> {
 
 /// A trait for collection accessors (see [`Storable::AccessorT`]) that provide iteration over
 /// their contents.
-pub trait IterableAccessor {
+pub trait IterableAccessor: Sized {
     /// The [`Storable`] type this accessor is associated with.
     type StorableT: Storable;
 
@@ -81,40 +81,97 @@ pub trait IterableAccessor {
     fn storage(&self) -> &Self::StorageT;
 
     /// Iterate over key-value pairs in this collection.
-    fn pairs<'s>(
-        &'s self,
-        start: Option<&[u8]>,
-        end: Option<&[u8]>,
-    ) -> StorableIter<'s, Self::StorableT, Self::StorageT> {
+    fn pairs(&self) -> StorableIter<'_, Self::StorableT, Self::StorageT> {
         StorableIter {
-            inner: self.storage().pairs(start, end),
+            inner: self.storage().pairs(None, None),
             phantom: PhantomData,
         }
     }
 
     /// Iterate over keys in this collection.
-    fn keys<'s>(
-        &'s self,
-        start: Option<&[u8]>,
-        end: Option<&[u8]>,
-    ) -> StorableKeys<'s, Self::StorableT, Self::StorageT> {
+    fn keys(&self) -> StorableKeys<'_, Self::StorableT, Self::StorageT> {
         StorableKeys {
-            inner: self.storage().keys(start, end),
+            inner: self.storage().keys(None, None),
             phantom: PhantomData,
         }
     }
 
     /// Iterate over values in this collection.
-    fn values<'s>(
-        &'s self,
-        start: Option<&[u8]>,
-        end: Option<&[u8]>,
-    ) -> StorableValues<'s, Self::StorableT, Self::StorageT> {
+    fn values(&self) -> StorableValues<'_, Self::StorableT, Self::StorageT> {
         StorableValues {
-            inner: self.storage().values(start, end),
+            inner: self.storage().values(None, None),
             phantom: PhantomData,
         }
     }
+}
+
+pub trait BoundedIterableAccessor: IterableAccessor {
+    /// Iterate over key-value pairs in this collection, respecting the given bounds.
+    fn bounded_pairs<S, E>(
+        &self,
+        start: Option<S>,
+        end: Option<E>,
+    ) -> StorableIter<'_, Self::StorableT, Self::StorageT>
+    where
+        S: BoundFor<Self::StorableT>,
+        E: BoundFor<Self::StorableT>,
+    {
+        let start = start.map(|b| b.into_bytes());
+        let end = end.map(|b| b.into_bytes());
+
+        StorableIter {
+            inner: self.storage().pairs(start.as_deref(), end.as_deref()),
+            phantom: PhantomData,
+        }
+    }
+
+    /// Iterate over keys in this collection, respecting the given bounds.
+    fn bounded_keys<S, E>(
+        &self,
+        start: Option<S>,
+        end: Option<E>,
+    ) -> StorableKeys<'_, Self::StorableT, Self::StorageT>
+    where
+        S: BoundFor<Self::StorableT>,
+        E: BoundFor<Self::StorableT>,
+    {
+        let start = start.map(|b| b.into_bytes());
+        let end = end.map(|b| b.into_bytes());
+
+        StorableKeys {
+            inner: self.storage().keys(start.as_deref(), end.as_deref()),
+            phantom: PhantomData,
+        }
+    }
+
+    /// Iterate over values in this collection, respecting the given bounds.
+    fn bounded_values<S, E>(
+        &self,
+        start: Option<S>,
+        end: Option<E>,
+    ) -> StorableValues<'_, Self::StorableT, Self::StorageT>
+    where
+        S: BoundFor<Self::StorableT>,
+        E: BoundFor<Self::StorableT>,
+    {
+        let start = start.map(|b| b.into_bytes());
+        let end = end.map(|b| b.into_bytes());
+
+        StorableValues {
+            inner: self.storage().values(start.as_deref(), end.as_deref()),
+            phantom: PhantomData,
+        }
+    }
+}
+
+/// A type that can be used as bounds for iteration over a given collection.
+///
+/// As an example, a collection `Foo` with string-y keys can accept both `String` and
+/// `&str` bounds by providing these impls:
+/// - `impl BoundFor<Foo> for &str`
+/// - `impl BoundFor<Foo> for String`
+pub trait BoundFor<T> {
+    fn into_bytes(self) -> Vec<u8>;
 }
 
 /// The iterator over key-value pairs in a collection.
