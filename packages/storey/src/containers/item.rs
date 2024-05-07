@@ -18,13 +18,13 @@ use super::Storable;
 /// use storey::containers::Item;
 ///
 /// let mut storage = TestStorage::new();
-/// let item = Item::<u64, TestEncoding>::new(&[0]);
+/// let item = Item::<u64, TestEncoding>::new(0);
 ///
 /// item.access(&mut storage).set(&42).unwrap();
 /// assert_eq!(item.access(&storage).get().unwrap(), Some(42));
 /// ```
 pub struct Item<T, E> {
-    prefix: &'static [u8],
+    key: u8,
     phantom: PhantomData<(T, E)>,
 }
 
@@ -36,9 +36,9 @@ where
     /// Create a new item with the given key.
     ///
     /// It is the responsibility of the caller to ensure that the key is unique.
-    pub const fn new(prefix: &'static [u8]) -> Self {
+    pub const fn new(key: u8) -> Self {
         Self {
-            prefix,
+            key,
             phantom: PhantomData,
         }
     }
@@ -53,15 +53,15 @@ where
     ///
     /// // immutable accessor
     /// let storage = TestStorage::new();
-    /// let item = Item::<u64, TestEncoding>::new(&[0]);
+    /// let item = Item::<u64, TestEncoding>::new(0);
     /// let access = item.access(&storage);
     ///
     /// // mutable accessor
     /// let mut storage = TestStorage::new();
-    /// let item = Item::<u64, TestEncoding>::new(&[0]);
+    /// let item = Item::<u64, TestEncoding>::new(0);
     /// let mut access = item.access(&mut storage);
     pub fn access<S>(&self, storage: S) -> ItemAccess<E, T, StorageBranch<S>> {
-        Self::access_impl(StorageBranch::new(storage, self.prefix.to_vec()))
+        Self::access_impl(StorageBranch::new(storage, vec![self.key]))
     }
 }
 
@@ -125,7 +125,7 @@ where
     /// use storey::containers::Item;
     ///
     /// let storage = TestStorage::new();
-    /// let item = Item::<u64, TestEncoding>::new(&[0]);
+    /// let item = Item::<u64, TestEncoding>::new(0);
     /// let access = item.access(&storage);
     ///
     /// assert_eq!(access.get().unwrap(), None);
@@ -137,7 +137,7 @@ where
     /// use storey::containers::Item;
     ///
     /// let mut storage = TestStorage::new();
-    /// let item = Item::<u64, TestEncoding>::new(&[0]);
+    /// let item = Item::<u64, TestEncoding>::new(0);
     ///
     /// item.access(&mut storage).set(&42).unwrap();
     /// assert_eq!(item.access(&storage).get().unwrap(), Some(42));
@@ -165,7 +165,7 @@ where
     /// use storey::containers::Item;
     ///
     /// let mut storage = TestStorage::new();
-    /// let item = Item::<u64, TestEncoding>::new(&[0]);
+    /// let item = Item::<u64, TestEncoding>::new(0);
     ///
     /// item.access(&mut storage).set(&42).unwrap();
     /// assert_eq!(item.access(&storage).get().unwrap(), Some(42));
@@ -188,10 +188,10 @@ mod tests {
     fn basic() {
         let mut storage = TestStorage::new();
 
-        let item0 = Item::<u64, TestEncoding>::new(&[0]);
+        let item0 = Item::<u64, TestEncoding>::new(0);
         item0.access(&mut storage).set(&42).unwrap();
 
-        let item1 = Item::<u64, TestEncoding>::new(&[1]);
+        let item1 = Item::<u64, TestEncoding>::new(1);
         let access1 = item1.access(&storage);
 
         assert_eq!(item0.access(&storage).get().unwrap(), Some(42));

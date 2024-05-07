@@ -21,7 +21,7 @@ use super::Storable;
 /// use storey::containers::{Item, Map};
 ///
 /// let mut storage = TestStorage::new();
-/// let map = Map::<String, Item<u64, TestEncoding>>::new(&[0]);
+/// let map = Map::<String, Item<u64, TestEncoding>>::new(0);
 /// let mut access = map.access(&mut storage);
 ///
 /// access.entry_mut("foo").set(&1337).unwrap();
@@ -35,7 +35,7 @@ use super::Storable;
 /// use storey::containers::{Item, Map};
 ///
 /// let mut storage = TestStorage::new();
-/// let map = Map::<String, Map<String, Item<u64, TestEncoding>>>::new(&[0]);
+/// let map = Map::<String, Map<String, Item<u64, TestEncoding>>>::new(0);
 /// let mut access = map.access(&mut storage);
 ///
 /// access.entry_mut("foo").entry_mut("bar").set(&1337).unwrap();
@@ -43,7 +43,7 @@ use super::Storable;
 /// assert_eq!(access.entry("foo").entry("baz").get().unwrap(), None);
 /// ```
 pub struct Map<K: ?Sized, V> {
-    prefix: &'static [u8],
+    prefix: u8,
     phantom: PhantomData<(*const K, V)>,
 }
 
@@ -59,7 +59,7 @@ where
     /// with other keys in the storage.
     ///
     /// The key provided here is used as a prefix for all keys managed by the map.
-    pub const fn new(prefix: &'static [u8]) -> Self {
+    pub const fn new(prefix: u8) -> Self {
         Self {
             prefix,
             phantom: PhantomData,
@@ -76,16 +76,16 @@ where
     ///
     /// // immutable access
     /// let storage = TestStorage::new();
-    /// let map = Map::<String, Item<u64, TestEncoding>>::new(&[0]);
+    /// let map = Map::<String, Item<u64, TestEncoding>>::new(0);
     /// let access = map.access(&storage);
     ///
     /// // mutable access
     /// let mut storage = TestStorage::new();
-    /// let map = Map::<String, Item<u64, TestEncoding>>::new(&[0]);
+    /// let map = Map::<String, Item<u64, TestEncoding>>::new(0);
     /// let mut access = map.access(&mut storage);
     /// ```
     pub fn access<S>(&self, storage: S) -> MapAccess<K, V, StorageBranch<S>> {
-        Self::access_impl(StorageBranch::new(storage, self.prefix.to_vec()))
+        Self::access_impl(StorageBranch::new(storage, vec![self.prefix]))
     }
 }
 
@@ -166,7 +166,7 @@ where
     /// use storey::containers::{Item, Map};
     ///
     /// let storage = TestStorage::new();
-    /// let map = Map::<String, Item<u64, TestEncoding>>::new(&[0]);
+    /// let map = Map::<String, Item<u64, TestEncoding>>::new(0);
     /// let access = map.access(&storage);
     ///
     /// assert_eq!(access.entry("foo").get().unwrap(), None);
@@ -178,7 +178,7 @@ where
     /// use storey::containers::{Item, Map};
     ///
     /// let storage = TestStorage::new();
-    /// let map = Map::<String, Map<String, Item<u64, TestEncoding>>>::new(&[0]);
+    /// let map = Map::<String, Map<String, Item<u64, TestEncoding>>>::new(0);
     /// let access = map.access(&storage);
     ///
     /// assert_eq!(access.entry("foo").entry("bar").get().unwrap(), None);
@@ -208,7 +208,7 @@ where
     /// use storey::containers::{Item, Map};
     ///
     /// let mut storage = TestStorage::new();
-    /// let map = Map::<String, Item<u64, TestEncoding>>::new(&[0]);
+    /// let map = Map::<String, Item<u64, TestEncoding>>::new(0);
     /// let mut access = map.access(&mut storage);
     ///
     /// access.entry_mut("foo").set(&1337).unwrap();
@@ -221,7 +221,7 @@ where
     /// use storey::containers::{Item, Map};
     ///
     /// let mut storage = TestStorage::new();
-    /// let map = Map::<String, Map<String, Item<u64, TestEncoding>>>::new(&[0]);
+    /// let map = Map::<String, Map<String, Item<u64, TestEncoding>>>::new(0);
     /// let mut access = map.access(&mut storage);
     ///
     /// access.entry_mut("foo").entry_mut("bar").set(&1337).unwrap();
@@ -313,7 +313,7 @@ mod tests {
     fn map() {
         let mut storage = TestStorage::new();
 
-        let map = Map::<String, Item<u64, TestEncoding>>::new(&[0]);
+        let map = Map::<String, Item<u64, TestEncoding>>::new(0);
 
         map.access(&mut storage)
             .entry_mut("foo")
@@ -332,7 +332,7 @@ mod tests {
     fn pairs() {
         let mut storage = TestStorage::new();
 
-        let map = Map::<String, Item<u64, TestEncoding>>::new(&[0]);
+        let map = Map::<String, Item<u64, TestEncoding>>::new(0);
         let mut access = map.access(&mut storage);
 
         access.entry_mut("foo").set(&1337).unwrap();
@@ -355,7 +355,7 @@ mod tests {
     fn keys() {
         let mut storage = TestStorage::new();
 
-        let map = Map::<String, Item<u64, TestEncoding>>::new(&[0]);
+        let map = Map::<String, Item<u64, TestEncoding>>::new(0);
         let mut access = map.access(&mut storage);
 
         access.entry_mut("foo").set(&1337).unwrap();
@@ -372,7 +372,7 @@ mod tests {
     fn values() {
         let mut storage = TestStorage::new();
 
-        let map = Map::<String, Item<u64, TestEncoding>>::new(&[0]);
+        let map = Map::<String, Item<u64, TestEncoding>>::new(0);
         let mut access = map.access(&mut storage);
 
         access.entry_mut("foo").set(&1337).unwrap();
