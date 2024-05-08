@@ -85,7 +85,7 @@ where
     E: Encoding,
     T: EncodableWith<E> + DecodableWith<E>,
 {
-    type AccessorT<S> = ColumnAccess<E, T, S>;
+    type Accessor<S> = ColumnAccess<E, T, S>;
     type Key = u32;
     type KeyDecodeError = ColumnKeyDecodeError;
     type Value = T;
@@ -127,10 +127,10 @@ where
     T: EncodableWith<E> + DecodableWith<E>,
     S: IterableStorage,
 {
-    type StorableT = Column<T, E>;
-    type StorageT = S;
+    type Storable = Column<T, E>;
+    type Storage = S;
 
-    fn storage(&self) -> &Self::StorageT {
+    fn storage(&self) -> &Self::Storage {
         &self.storage
     }
 }

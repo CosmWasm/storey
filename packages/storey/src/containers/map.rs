@@ -95,7 +95,7 @@ where
     V: Storable,
     <V as Storable>::KeyDecodeError: std::fmt::Display,
 {
-    type AccessorT<S> = MapAccess<K, V, S>;
+    type Accessor<S> = MapAccess<K, V, S>;
     type Key = (K, V::Key);
     type KeyDecodeError = MapKeyDecodeError<V::KeyDecodeError>;
     type Value = V::Value;
@@ -183,7 +183,7 @@ where
     ///
     /// assert_eq!(access.entry("foo").entry("bar").get().unwrap(), None);
     /// ```
-    pub fn entry<Q>(&self, key: &Q) -> V::AccessorT<StorageBranch<&S>>
+    pub fn entry<Q>(&self, key: &Q) -> V::Accessor<StorageBranch<&S>>
     where
         K: Borrow<Q>,
         Q: Key + ?Sized,
@@ -222,7 +222,7 @@ where
     /// access.entry_mut("foo").entry_mut("bar").set(&1337).unwrap();
     /// assert_eq!(access.entry("foo").entry("bar").get().unwrap(), Some(1337));
     /// ```
-    pub fn entry_mut<Q>(&mut self, key: &Q) -> V::AccessorT<StorageBranch<&mut S>>
+    pub fn entry_mut<Q>(&mut self, key: &Q) -> V::Accessor<StorageBranch<&mut S>>
     where
         K: Borrow<Q>,
         Q: Key + ?Sized,
@@ -256,10 +256,10 @@ where
     <V as Storable>::KeyDecodeError: std::fmt::Display,
     S: IterableStorage,
 {
-    type StorableT = Map<K, V>;
-    type StorageT = S;
+    type Storable = Map<K, V>;
+    type Storage = S;
 
-    fn storage(&self) -> &Self::StorageT {
+    fn storage(&self) -> &Self::Storage {
         &self.storage
     }
 }

@@ -70,7 +70,7 @@ where
     E: Encoding,
     T: EncodableWith<E> + DecodableWith<E>,
 {
-    type AccessorT<S> = ItemAccess<E, T, S>;
+    type Accessor<S> = ItemAccess<E, T, S>;
     type Key = ();
     type KeyDecodeError = ItemKeyDecodeError;
     type Value = T;

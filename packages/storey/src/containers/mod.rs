@@ -20,7 +20,7 @@ pub trait Storable {
     /// specific [`Storage`] type used (the `S` type parameter here).
     ///
     /// [`Storage`]: crate::storage::Storage
-    type AccessorT<S>;
+    type Accessor<S>;
 
     /// The Key type for this collection/container. This is the type that will be used in
     /// key iteration.
@@ -44,7 +44,7 @@ pub trait Storable {
     /// Create an accessor for this collection/container, given a [`Storage`] implementation.
     ///
     /// [`Storage`]: crate::storage::Storage
-    fn access_impl<S>(storage: S) -> Self::AccessorT<S>;
+    fn access_impl<S>(storage: S) -> Self::Accessor<S>;
 
     /// Decode a key from a byte slice.
     ///
@@ -70,18 +70,18 @@ pub enum KVDecodeError<K, V> {
 /// their contents.
 pub trait IterableAccessor: Sized {
     /// The [`Storable`] type this accessor is associated with.
-    type StorableT: Storable;
+    type Storable: Storable;
 
     /// The [`Storage`] type this accessor is associated with.
     ///
     /// [`Storage`]: crate::storage::Storage
-    type StorageT: IterableStorage;
+    type Storage: IterableStorage;
 
     /// Get a reference to the storage this accessor is associated with.
-    fn storage(&self) -> &Self::StorageT;
+    fn storage(&self) -> &Self::Storage;
 
     /// Iterate over key-value pairs in this collection.
-    fn pairs(&self) -> StorableIter<'_, Self::StorableT, Self::StorageT> {
+    fn pairs(&self) -> StorableIter<'_, Self::Storable, Self::Storage> {
         StorableIter {
             inner: self.storage().pairs(None, None),
             phantom: PhantomData,
@@ -89,7 +89,7 @@ pub trait IterableAccessor: Sized {
     }
 
     /// Iterate over keys in this collection.
-    fn keys(&self) -> StorableKeys<'_, Self::StorableT, Self::StorageT> {
+    fn keys(&self) -> StorableKeys<'_, Self::Storable, Self::Storage> {
         StorableKeys {
             inner: self.storage().keys(None, None),
             phantom: PhantomData,
@@ -97,7 +97,7 @@ pub trait IterableAccessor: Sized {
     }
 
     /// Iterate over values in this collection.
-    fn values(&self) -> StorableValues<'_, Self::StorableT, Self::StorageT> {
+    fn values(&self) -> StorableValues<'_, Self::Storable, Self::Storage> {
         StorableValues {
             inner: self.storage().values(None, None),
             phantom: PhantomData,
@@ -111,10 +111,10 @@ pub trait BoundedIterableAccessor: IterableAccessor {
         &self,
         start: Option<S>,
         end: Option<E>,
-    ) -> StorableIter<'_, Self::StorableT, Self::StorageT>
+    ) -> StorableIter<'_, Self::Storable, Self::Storage>
     where
-        S: BoundFor<Self::StorableT>,
-        E: BoundFor<Self::StorableT>,
+        S: BoundFor<Self::Storable>,
+        E: BoundFor<Self::Storable>,
     {
         let start = start.map(|b| b.into_bytes());
         let end = end.map(|b| b.into_bytes());
@@ -130,10 +130,10 @@ pub trait BoundedIterableAccessor: IterableAccessor {
         &self,
         start: Option<S>,
         end: Option<E>,
-    ) -> StorableKeys<'_, Self::StorableT, Self::StorageT>
+    ) -> StorableKeys<'_, Self::Storable, Self::Storage>
     where
-        S: BoundFor<Self::StorableT>,
-        E: BoundFor<Self::StorableT>,
+        S: BoundFor<Self::Storable>,
+        E: BoundFor<Self::Storable>,
     {
         let start = start.map(|b| b.into_bytes());
         let end = end.map(|b| b.into_bytes());
@@ -149,10 +149,10 @@ pub trait BoundedIterableAccessor: IterableAccessor {
         &self,
         start: Option<S>,
         end: Option<E>,
-    ) -> StorableValues<'_, Self::StorableT, Self::StorageT>
+    ) -> StorableValues<'_, Self::Storable, Self::Storage>
     where
-        S: BoundFor<Self::StorableT>,
-        E: BoundFor<Self::StorableT>,
+        S: BoundFor<Self::Storable>,
+        E: BoundFor<Self::Storable>,
     {
         let start = start.map(|b| b.into_bytes());
         let end = end.map(|b| b.into_bytes());
