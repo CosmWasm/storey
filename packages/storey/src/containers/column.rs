@@ -270,7 +270,7 @@ where
     /// access.push(&1337).unwrap();
     /// access.push(&42).unwrap();
     /// ```
-    pub fn push(&mut self, value: &T) -> Result<(), PushError<E::EncodeError>> {
+    pub fn push(&mut self, value: &T) -> Result<u32, PushError<E::EncodeError>> {
         let bytes = value.encode()?;
 
         let ix = match self
@@ -292,7 +292,7 @@ where
             .unwrap_or(0);
         self.storage.set_meta(META_LEN, &(len + 1).to_be_bytes());
 
-        Ok(())
+        Ok(ix)
     }
 
     /// Update the value associated with the given key.
@@ -413,8 +413,8 @@ mod tests {
         let column = Column::<u64, TestEncoding>::new(0);
         let mut access = column.access(&mut storage);
 
-        access.push(&1337).unwrap();
-        access.push(&42).unwrap();
+        assert_eq!(access.push(&1337).unwrap(), 0);
+        assert_eq!(access.push(&42).unwrap(), 1);
 
         assert_eq!(access.get(0).unwrap(), Some(1337));
         assert_eq!(access.get(1).unwrap(), Some(42));
