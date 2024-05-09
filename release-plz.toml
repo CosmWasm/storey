@@ -28,5 +28,5 @@ commit_parsers = [
 git_tag_enable = false
 
 [[package]]
-name = "storey"
+name = "cw-storey"
 git_tag_enable = true
