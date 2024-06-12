@@ -1,6 +1,6 @@
 use storey::encoding::{Cover, DecodableWithImpl, EncodableWithImpl, Encoding};
 
-/// A simple encoding that uses [*MessagePack*] to encode and decode data.
+/// An encoding that delegates to the [*MessagePack*] encoding provided by the [`cosmwasm_std`] crate.
 ///
 /// This type implements the [`Encoding`] trait (see [`storey::encoding`]), which means it can
 /// be used with some of [`storey`]'s containers to encode and decode values.
@@ -9,19 +9,20 @@ use storey::encoding::{Cover, DecodableWithImpl, EncodableWithImpl, Encoding};
 /// need it if you're trying to use third-party containers this crate does not provide.
 ///
 /// [*MessagePack*]: https://msgpack.org/
+/// [`cosmwasm_std`]: https://docs.rs/cosmwasm-std
 pub struct CwEncoding;
 
 impl Encoding for CwEncoding {
-    type DecodeError = ();
-    type EncodeError = ();
+    type DecodeError = cosmwasm_std_new::StdError;
+    type EncodeError = cosmwasm_std_new::StdError;
 }
 
 impl<T> EncodableWithImpl<CwEncoding> for Cover<&T>
 where
     T: serde::Serialize,
 {
-    fn encode_impl(self) -> Result<Vec<u8>, ()> {
-        rmp_serde::to_vec(self.0).map_err(|_| ())
+    fn encode_impl(self) -> Result<Vec<u8>, cosmwasm_std_new::StdError> {
+        cosmwasm_std_new::to_msgpack_vec(self.0)
     }
 }
 
@@ -29,7 +30,7 @@ impl<T> DecodableWithImpl<CwEncoding> for Cover<T>
 where
     T: serde::de::DeserializeOwned,
 {
-    fn decode_impl(data: &[u8]) -> Result<Self, ()> {
-        rmp_serde::from_slice(data).map(Cover).map_err(|_| ())
+    fn decode_impl(data: &[u8]) -> Result<Self, cosmwasm_std_new::StdError> {
+        cosmwasm_std_new::from_msgpack(data).map(Cover)
     }
 }
