@@ -12,10 +12,7 @@ license = { workspace = true }
 
 [dependencies]
 cosmwasm-std = "2"
+rmp-serde = "1.1"
 serde = "1"
-
-# TODO: temporary, remove after this is released:
-# https://github.com/CosmWasm/cosmwasm/pull/2118
-cosmwasm-std-new = { git = "https://github.com/CosmWasm/cosmwasm.git", rev = "553bdd6fc5cc9c74bebcba99a89c0c4334b8824d", package = "cosmwasm-std" }
 
 storey = { workspace = true }
