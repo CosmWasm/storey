@@ -71,7 +71,7 @@ impl<S: StorageMut> StorageMut for StorageBranch<&mut S> {
     }
 }
 
-impl<S: IterableStorage> IterableStorage for StorageBranch<S> {
+impl<S: IterableStorage> IterableStorage for StorageBranch<&S> {
     type KeysIterator<'a> = BranchKeysIter<S::KeysIterator<'a>> where Self: 'a;
     type ValuesIterator<'a> = S::ValuesIterator<'a> where Self: 'a;
     type PairsIterator<'a> = BranchKVIter<S::PairsIterator<'a>> where Self: 'a;
@@ -110,7 +110,97 @@ impl<S: IterableStorage> IterableStorage for StorageBranch<S> {
     }
 }
 
-impl<S: RevIterableStorage> RevIterableStorage for StorageBranch<S> {
+impl<S: IterableStorage> IterableStorage for StorageBranch<&mut S> {
+    type KeysIterator<'a> = BranchKeysIter<S::KeysIterator<'a>> where Self: 'a;
+    type ValuesIterator<'a> = S::ValuesIterator<'a> where Self: 'a;
+    type PairsIterator<'a> = BranchKVIter<S::PairsIterator<'a>> where Self: 'a;
+
+    fn keys<'a>(&'a self, start: Option<&[u8]>, end: Option<&[u8]>) -> Self::KeysIterator<'a> {
+        let (start, end) = sub_bounds(&self.prefix, start, end);
+
+        BranchKeysIter {
+            inner: self.backend.keys(
+                start.as_ref().map(AsRef::as_ref),
+                end.as_ref().map(AsRef::as_ref),
+            ),
+            prefix_len: self.prefix.len(),
+        }
+    }
+
+    fn values<'a>(&'a self, start: Option<&[u8]>, end: Option<&[u8]>) -> Self::ValuesIterator<'a> {
+        let (start, end) = sub_bounds(&self.prefix, start, end);
+
+        self.backend.values(
+            start.as_ref().map(AsRef::as_ref),
+            end.as_ref().map(AsRef::as_ref),
+        )
+    }
+
+    fn pairs<'a>(&'a self, start: Option<&[u8]>, end: Option<&[u8]>) -> Self::PairsIterator<'a> {
+        let (start, end) = sub_bounds(&self.prefix, start, end);
+
+        BranchKVIter {
+            inner: self.backend.pairs(
+                start.as_ref().map(AsRef::as_ref),
+                end.as_ref().map(AsRef::as_ref),
+            ),
+            prefix_len: self.prefix.len(),
+        }
+    }
+}
+
+impl<S: RevIterableStorage> RevIterableStorage for StorageBranch<&S> {
+    type RevKeysIterator<'a> = BranchKeysIter<S::RevKeysIterator<'a>> where Self: 'a;
+    type RevValuesIterator<'a> = S::RevValuesIterator<'a> where Self: 'a;
+    type RevPairsIterator<'a> = BranchKVIter<S::RevPairsIterator<'a>> where Self: 'a;
+
+    fn rev_keys<'a>(
+        &'a self,
+        start: Option<&[u8]>,
+        end: Option<&[u8]>,
+    ) -> Self::RevKeysIterator<'a> {
+        let (start, end) = sub_bounds(&self.prefix, start, end);
+
+        BranchKeysIter {
+            inner: self.backend.rev_keys(
+                start.as_ref().map(AsRef::as_ref),
+                end.as_ref().map(AsRef::as_ref),
+            ),
+            prefix_len: self.prefix.len(),
+        }
+    }
+
+    fn rev_values<'a>(
+        &'a self,
+        start: Option<&[u8]>,
+        end: Option<&[u8]>,
+    ) -> Self::RevValuesIterator<'a> {
+        let (start, end) = sub_bounds(&self.prefix, start, end);
+
+        self.backend.rev_values(
+            start.as_ref().map(AsRef::as_ref),
+            end.as_ref().map(AsRef::as_ref),
+        )
+    }
+
+    fn rev_pairs<'a>(
+        &'a self,
+        start: Option<&[u8]>,
+        end: Option<&[u8]>,
+    ) -> Self::RevPairsIterator<'a> {
+        let (start, end) = sub_bounds(&self.prefix, start, end);
+
+        BranchKVIter {
+            inner: self.backend.rev_pairs(
+                start.as_ref().map(AsRef::as_ref),
+                end.as_ref().map(AsRef::as_ref),
+            ),
+            prefix_len: self.prefix.len(),
+        }
+    }
+}
+
+impl<S: RevIterableStorage> RevIterableStorage for StorageBranch<&mut S> {
     type RevKeysIterator<'a> = BranchKeysIter<S::RevKeysIterator<'a>> where Self: 'a;
     type RevValuesIterator<'a> = S::RevValuesIterator<'a> where Self: 'a;
     type RevPairsIterator<'a> = BranchKVIter<S::RevPairsIterator<'a>> where Self: 'a;
