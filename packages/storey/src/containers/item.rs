@@ -4,7 +4,7 @@ use crate::encoding::{DecodableWith, EncodableWith, Encoding};
 use crate::storage::StorageBranch;
 use crate::storage::{Storage, StorageMut};
 
-use super::Storable;
+use super::{Storable, Terminal};
 
 /// A single item in the storage.
 ///
@@ -70,6 +70,7 @@ where
     E: Encoding,
     T: EncodableWith<E> + DecodableWith<E>,
 {
+    type Kind = Terminal;
     type Accessor<S> = ItemAccess<E, T, S>;
     type Key = ();
     type KeyDecodeError = ItemKeyDecodeError;

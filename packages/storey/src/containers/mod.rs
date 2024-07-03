@@ -15,6 +15,8 @@ use crate::storage::IterableStorage;
 
 /// The fundamental trait every collection/container should implement.
 pub trait Storable {
+    type Kind: StorableKind;
+
     /// The accessor type for this collection/container. An accessor is a type that provides
     /// methods for reading and writing to the collection/container and encapsulates the
     /// specific [`Storage`] type used (the `S` type parameter here).
@@ -245,3 +247,11 @@ where
         self.inner.next().map(|v| S::decode_value(&v))
     }
 }
+
+pub trait StorableKind {}
+
+pub struct Terminal;
+pub struct NonTerminal;
+
+impl StorableKind for Terminal {}
+impl StorableKind for NonTerminal {}
