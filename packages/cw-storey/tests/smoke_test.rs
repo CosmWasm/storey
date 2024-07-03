@@ -28,6 +28,12 @@ fn map() {
     let map = Map::<String, Item<u32>>::new(0);
 
     map.access(&mut storage).entry_mut("foo").set(&42).unwrap();
+
+    assert_eq!(map.access(&storage).entry("foo").get().unwrap(), Some(42));
+
+    map.access(&mut storage).entry_remove("foo");
+
+    assert_eq!(map.access(&storage).entry("foo").get().unwrap(), None);
 }
 
 #[test]
