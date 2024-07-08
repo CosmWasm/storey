@@ -227,12 +227,7 @@ where
         K: Borrow<Q>,
         Q: Key + ?Sized,
     {
-        let len = key.bytes().len();
-        let bytes = key.bytes();
-        let mut key = Vec::with_capacity(len + 1);
-
-        key.push(len as u8);
-        key.extend_from_slice(bytes);
+        let key = length_prefixed_key(key);
 
         V::access_impl(StorageBranch::new(&mut self.storage, key))
     }
@@ -331,6 +326,9 @@ mod tests {
             storage.get(&[0, 3, 102, 111, 111]),
             Some(1337u64.to_le_bytes().to_vec())
         );
+        map.access(&mut storage).entry_mut("foo").remove();
+
+        assert_eq!(map.access(&storage).entry("foo").get().unwrap(), None);
         assert_eq!(map.access(&storage).entry("bar").get().unwrap(), None);
     }
 
