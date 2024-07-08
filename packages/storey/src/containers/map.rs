@@ -1,9 +1,7 @@
 use std::{borrow::Borrow, marker::PhantomData};
 
 use crate::storage::IterableStorage;
-use crate::storage::Storage;
 use crate::storage::StorageBranch;
-use crate::storage::StorageMut;
 
 use super::IterableAccessor;
 use super::Storable;
@@ -157,7 +155,6 @@ impl<K, V, S> MapAccess<K, V, S>
 where
     K: Key,
     V: Storable,
-    S: Storage,
 {
     /// Returns an immutable accessor for the inner container of this map.
     ///
@@ -195,14 +192,7 @@ where
 
         V::access_impl(StorageBranch::new(&self.storage, key))
     }
-}
 
-impl<K, V, S> MapAccess<K, V, S>
-where
-    K: Key,
-    V: Storable,
-    S: StorageMut,
-{
     /// Returns a mutable accessor for the inner container of this map.
     ///
     /// # Examples
@@ -240,50 +230,6 @@ where
         let key = length_prefixed_key(key);
 
         V::access_impl(StorageBranch::new(&mut self.storage, key))
-    }
-
-    /// Removes the inner container for a given key.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use mocks::encoding::TestEncoding;
-    /// # use mocks::backend::TestStorage;
-    /// use storey::containers::{Item, Map};
-    /// pub fn main()
-    /// let mut storage = TestStorage::new();
-    /// let map = Map::<String, Item<u64, TestEncoding>>::new(0);
-    /// let mut access = map.access(&mut storage);
-    ///
-    /// access.entry_mut("foo").set(&1337).unwrap();
-    /// assert_eq!(access.entry("foo").get().unwrap(), Some(1337));
-    ///
-    /// access.entry_remove("foo");
-    /// assert_eq!(access.entry("foo").get().unwrap(), None);
-    /// ```
-    ///
-    /// ```rust
-    /// # use mocks::encoding::TestEncoding;
-    /// # use mocks::backend::TestStorage;
-    /// use storey::containers::{Item, Map};
-    ///
-    /// let mut storage = TestStorage::new();
-    /// let map = Map::<String, Map<String, Item<u64, TestEncoding>>>::new(0);
-    /// let mut access = map.access(&mut storage);
-    ///
-    /// access.entry_mut("foo").entry_mut("bar").set(&1337).unwrap();
-    /// assert_eq!(access.entry("foo").entry("bar").get().unwrap(), Some(1337));
-    ///
-    /// access.entry_remove("foo");
-    /// assert_eq!(access.entry("foo").get().unwrap(), None);
-    /// ```
-    pub fn entry_remove<Q>(&mut self, key: &Q)
-    where
-        Q: Key + ?Sized,
-    {
-        let key = length_prefixed_key(key);
-
-        self.storage.remove(&key);
     }
 }
 
@@ -362,6 +308,7 @@ mod tests {
 
     use mocks::backend::TestStorage;
     use mocks::encoding::TestEncoding;
+    use storey_storage::Storage as _;
 
     #[test]
     fn map() {
@@ -379,7 +326,7 @@ mod tests {
             storage.get(&[0, 3, 102, 111, 111]),
             Some(1337u64.to_le_bytes().to_vec())
         );
-        map.access(&mut storage).entry_remove("foo");
+        map.access(&mut storage).entry_mut("foo").remove();
 
         assert_eq!(map.access(&storage).entry("foo").get().unwrap(), None);
         assert_eq!(map.access(&storage).entry("bar").get().unwrap(), None);

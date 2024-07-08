@@ -175,6 +175,24 @@ where
         self.storage.set(&[], &bytes);
         Ok(())
     }
+
+    /// Remove the value of the item.
+    ///
+    /// # Example
+    /// ```
+    /// # use mocks::encoding::TestEncoding;
+    /// # use mocks::backend::TestStorage;
+    /// use storey::containers::Item;
+    ///
+    /// let mut storage = TestStorage::new();
+    /// let item = Item::<u64, TestEncoding>::new(0);
+    ///
+    /// item.access(&mut storage).remove();
+    /// assert_eq!(item.access(&storage).get().unwrap(), None);
+    /// ```
+    pub fn remove(&mut self) {
+        self.storage.remove(&[]);
+    }
 }
 
 #[cfg(test)]

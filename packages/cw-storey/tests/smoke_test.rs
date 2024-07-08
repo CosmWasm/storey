@@ -31,7 +31,7 @@ fn map() {
 
     assert_eq!(map.access(&storage).entry("foo").get().unwrap(), Some(42));
 
-    map.access(&mut storage).entry_remove("foo");
+    map.access(&mut storage).entry_mut("foo").remove();
 
     assert_eq!(map.access(&storage).entry("foo").get().unwrap(), None);
 }
