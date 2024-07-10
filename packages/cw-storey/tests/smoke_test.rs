@@ -2,8 +2,17 @@ use cw_storey::{containers::Item, CwStorage};
 
 use storey::containers::{IterableAccessor as _, Map};
 
+// The tests in this module are meant to briefly test the integration of `storey`
+// with `cosmwasm_std::Storage` and MessagePack serialization.
+//
+// They're not meant to comprehensively test the storage abstractions provided by `storey`.
+// That's already done in the `storey` crate itself.
+
 #[test]
 fn smoke_test() {
+    // this pattern mimicks how storage is accessed from CosmWasm smart contracts,
+    // where developers have access to `&dyn cosmwasm_std::Storage` or
+    // `&mut dyn cosmwasm_std::Storage`, but not the concrete type.
     let mut raw_storage = cosmwasm_std::testing::MockStorage::new();
     let dyn_storage: &mut dyn cosmwasm_std::Storage = &mut raw_storage;
     let mut storage = CwStorage(dyn_storage);
@@ -30,10 +39,6 @@ fn map() {
     map.access(&mut storage).entry_mut("foo").set(&42).unwrap();
 
     assert_eq!(map.access(&storage).entry("foo").get().unwrap(), Some(42));
-
-    map.access(&mut storage).entry_mut("foo").remove();
-
-    assert_eq!(map.access(&storage).entry("foo").get().unwrap(), None);
 }
 
 #[test]

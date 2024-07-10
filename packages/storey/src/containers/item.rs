@@ -187,6 +187,7 @@ where
     /// let mut storage = TestStorage::new();
     /// let item = Item::<u64, TestEncoding>::new(0);
     ///
+    /// item.access(&mut storage).set(&42).unwrap();
     /// item.access(&mut storage).remove();
     /// assert_eq!(item.access(&storage).get().unwrap(), None);
     /// ```
