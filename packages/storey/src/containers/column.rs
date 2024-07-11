@@ -7,7 +7,7 @@ use crate::encoding::{DecodableWith, EncodableWith};
 use crate::storage::{IterableStorage, StorageBranch};
 use crate::storage::{Storage, StorageMut};
 
-use super::{BoundFor, BoundedIterableAccessor, IterableAccessor, Storable};
+use super::{BoundFor, BoundedIterableAccessor, IterableAccessor, NonTerminal, Storable};
 
 const META_LAST_IX: &[u8] = &[0];
 const META_LEN: &[u8] = &[1];
@@ -85,6 +85,7 @@ where
     E: Encoding,
     T: EncodableWith<E> + DecodableWith<E>,
 {
+    type Kind = NonTerminal;
     type Accessor<S> = ColumnAccess<E, T, S>;
     type Key = u32;
     type KeyDecodeError = ColumnKeyDecodeError;
