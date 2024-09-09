@@ -1,6 +1,9 @@
 mod key;
+mod key_encoding;
 
 pub use key::{Key, OwnedKey};
+use key_encoding::KeyEncoding;
+use key_encoding::KeyEncodingT;
 
 use std::{borrow::Borrow, marker::PhantomData};
 
@@ -63,7 +66,7 @@ where
     K: OwnedKey,
     V: Storable,
     <V as Storable>::KeyDecodeError: std::fmt::Display,
-    (K::Kind, V::Kind): KeyDecodeBehaviorT,
+    (K::Kind, V::Kind): KeyEncodingT,
 {
     /// Creates a new map with the given prefix.
     ///
@@ -106,7 +109,7 @@ where
     K: OwnedKey,
     V: Storable,
     <V as Storable>::KeyDecodeError: std::fmt::Display,
-    (K::Kind, V::Kind): KeyDecodeBehaviorT,
+    (K::Kind, V::Kind): KeyEncodingT,
 {
     type Kind = NonTerminal;
     type Accessor<S> = MapAccess<K, V, S>;
@@ -126,7 +129,7 @@ where
         let behavior = <(K::Kind, V::Kind)>::BEHAVIOR;
 
         match behavior {
-            KeyDecodeBehavior::FollowLenPrefix => {
+            KeyEncoding::LenPrefix => {
                 let len = *key.first().ok_or(MapKeyDecodeError::EmptyKey)? as usize;
 
                 if key.len() < len + 1 {
@@ -139,13 +142,13 @@ where
 
                 Ok((map_key, rest))
             }
-            KeyDecodeBehavior::UseRest => {
+            KeyEncoding::UseRest => {
                 let map_key = K::from_bytes(key).map_err(|_| MapKeyDecodeError::InvalidUtf8)?;
                 let rest = V::decode_key(&[]).map_err(MapKeyDecodeError::Inner)?;
 
                 Ok((map_key, rest))
             }
-            KeyDecodeBehavior::UseN(n) => {
+            KeyEncoding::UseN(n) => {
                 let map_key =
                     K::from_bytes(&key[..n]).map_err(|_| MapKeyDecodeError::InvalidUtf8)?;
                 let rest = V::decode_key(&key[n..]).map_err(MapKeyDecodeError::Inner)?;
@@ -188,7 +191,7 @@ impl<K, V, S> MapAccess<K, V, S>
 where
     K: Key,
     V: Storable,
-    (K::Kind, V::Kind): KeyDecodeBehaviorT,
+    (K::Kind, V::Kind): KeyEncodingT,
 {
     /// Returns an immutable accessor for the inner container of this map.
     ///
@@ -225,7 +228,7 @@ where
         let behavior = <(K::Kind, V::Kind)>::BEHAVIOR;
 
         let key = match behavior {
-            KeyDecodeBehavior::FollowLenPrefix => len_prefix(key.encode()),
+            KeyEncoding::LenPrefix => len_prefix(key.encode()),
             _ => key.encode(),
         };
 
@@ -269,7 +272,7 @@ where
         let behavior = <(K::Kind, V::Kind)>::BEHAVIOR;
 
         let key = match behavior {
-            KeyDecodeBehavior::FollowLenPrefix => len_prefix(key.encode()),
+            KeyEncoding::LenPrefix => len_prefix(key.encode()),
             _ => key.encode(),
         };
 
@@ -291,7 +294,7 @@ where
     V: Storable,
     <V as Storable>::KeyDecodeError: std::fmt::Display,
     S: IterableStorage,
-    (K::Kind, V::Kind): KeyDecodeBehaviorT,
+    (K::Kind, V::Kind): KeyEncodingT,
 {
     type Storable = Map<K, V>;
     type Storage = S;
@@ -314,7 +317,7 @@ where
     V: Storable,
     <V as Storable>::KeyDecodeError: std::fmt::Display,
     S: IterableStorage,
-    (K::Kind, V::Kind): BoundedIterationAllowed + KeyDecodeBehaviorT,
+    (K::Kind, V::Kind): BoundedIterationAllowed + KeyEncodingT,
 {
 }
 
@@ -324,44 +327,18 @@ impl<const L: usize> BoundedIterationAllowed for (FixedSizeKey<L>, Terminal) {}
 impl<const L: usize> BoundedIterationAllowed for (FixedSizeKey<L>, NonTerminal) {}
 impl BoundedIterationAllowed for (DynamicKey, Terminal) {}
 
-trait KeyDecodeBehaviorT {
-    const BEHAVIOR: KeyDecodeBehavior;
-}
-
-impl<const L: usize> KeyDecodeBehaviorT for (FixedSizeKey<L>, Terminal) {
-    const BEHAVIOR: KeyDecodeBehavior = KeyDecodeBehavior::UseRest;
-}
-
-impl<const L: usize> KeyDecodeBehaviorT for (FixedSizeKey<L>, NonTerminal) {
-    const BEHAVIOR: KeyDecodeBehavior = KeyDecodeBehavior::UseN(L);
-}
-
-impl KeyDecodeBehaviorT for (DynamicKey, Terminal) {
-    const BEHAVIOR: KeyDecodeBehavior = KeyDecodeBehavior::UseRest;
-}
-
-impl KeyDecodeBehaviorT for (DynamicKey, NonTerminal) {
-    const BEHAVIOR: KeyDecodeBehavior = KeyDecodeBehavior::FollowLenPrefix;
-}
-
-enum KeyDecodeBehavior {
-    FollowLenPrefix,
-    UseRest,
-    UseN(usize),
-}
-
 impl<K, V, Q> BoundFor<Map<K, V>> for &Q
 where
     K: Borrow<Q> + OwnedKey,
     V: Storable,
     Q: Key + ?Sized,
-    (K::Kind, V::Kind): KeyDecodeBehaviorT,
+    (K::Kind, V::Kind): KeyEncodingT,
 {
     fn into_bytes(self) -> Vec<u8> {
         let behavior = <(K::Kind, V::Kind)>::BEHAVIOR;
 
         match behavior {
-            KeyDecodeBehavior::FollowLenPrefix => len_prefix(self.encode()),
+            KeyEncoding::LenPrefix => len_prefix(self.encode()),
             _ => self.encode(),
         }
     }
