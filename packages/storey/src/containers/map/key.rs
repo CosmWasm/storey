@@ -1,12 +1,18 @@
+/// A key that can be used with a [`Map`](crate::Map).
 pub trait Key {
+    /// The kind of key, meaning either fixed size or dynamic size.
     type Kind: KeyKind;
 
+    /// Encode the key into a byte vector.
     fn encode(&self) -> Vec<u8>;
 }
 
+/// An owned key that can be used with a [`Map`](crate::Map).
 pub trait OwnedKey: Key {
+    /// The error type that can occur when decoding the key.
     type Error;
 
+    /// Decode the key from a byte slice.
     fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error>
     where
         Self: Sized;
@@ -28,6 +34,7 @@ impl Key for str {
     }
 }
 
+/// An error type representing a failure to decode a UTF-8 string.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, thiserror::Error)]
 #[error("invalid UTF8")]
 pub struct InvalidUtf8;
@@ -45,14 +52,25 @@ impl OwnedKey for String {
     }
 }
 
+/// A trait specifying the kind of key.
+///
+/// There are two kinds of keys: fixed-size keys and dynamic keys, which are
+/// represented by the [`FixedSizeKey`] and [`DynamicKey`] types, respectively.
+///
+/// This trait is [sealed](https://rust-lang.github.io/api-guidelines/future-proofing.html#sealed-traits)
+/// and cannot be implemented outside of this crate.
 pub trait KeyKind {}
 
+/// A marker type representing a fixed-size key.
 pub struct FixedSizeKey<const L: usize>;
+
+/// A marker type representing a dynamic-size key.
 pub struct DynamicKey;
 
 impl<const L: usize> KeyKind for FixedSizeKey<L> {}
 impl KeyKind for DynamicKey {}
 
+/// An error type for decoding numeric keys.
 pub enum NumericKeyDecodeError {
     InvalidLength,
 }

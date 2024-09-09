@@ -68,7 +68,7 @@ pub enum KVDecodeError<K, V> {
     Value(V),
 }
 
-/// A trait for collection accessors (see [`Storable::AccessorT`]) that provide iteration over
+/// A trait for collection accessors (see [`Storable::Accessor`]) that provide iteration over
 /// their contents.
 pub trait IterableAccessor: Sized {
     /// The [`Storable`] type this accessor is associated with.
@@ -248,9 +248,24 @@ where
     }
 }
 
+/// The kind of a storable.
+///
+/// This is used to differentiate between terminal and non-terminal storables.
+/// See also: [`Terminal`] and [`NonTerminal`].
+///
+/// This trait is [sealed](https://rust-lang.github.io/api-guidelines/future-proofing.html#sealed-traits-protect-against-downstream-implementations-c-sealed)
+/// and cannot be implemented outside of this crate.
 pub trait StorableKind {}
 
+/// A terminal [`Storable`] kind. A terminal storable doesn't manage any subkeys,
+/// and is the end of the line in a composable collection.
+///
+/// An example of a terminal storable is [`Item`], but not [`Column`] or [`Map`].
 pub struct Terminal;
+
+/// A non-terminal [`Storable`] kind. A non-terminal storable manages subkeys.
+///
+/// Some examples of non-terminal storables are [`Column`] and [`Map`].
 pub struct NonTerminal;
 
 impl StorableKind for Terminal {}
