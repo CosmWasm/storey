@@ -3,7 +3,7 @@
 
 mod column;
 mod item;
-mod map;
+pub mod map;
 
 use std::marker::PhantomData;
 

@@ -1,4 +1,4 @@
-mod key;
+pub mod key;
 mod key_encoding;
 
 pub use key::{Key, OwnedKey};
