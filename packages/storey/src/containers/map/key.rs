@@ -59,7 +59,7 @@ impl OwnedKey for String {
 ///
 /// This trait is [sealed](https://rust-lang.github.io/api-guidelines/future-proofing.html#sealed-traits)
 /// and cannot be implemented outside of this crate.
-pub trait KeyKind {}
+pub trait KeyKind: sealed::KeyKindSeal {}
 
 /// A marker type representing a fixed-size key.
 pub struct FixedSizeKey<const L: usize>;
@@ -69,6 +69,13 @@ pub struct DynamicKey;
 
 impl<const L: usize> KeyKind for FixedSizeKey<L> {}
 impl KeyKind for DynamicKey {}
+
+mod sealed {
+    pub trait KeyKindSeal {}
+
+    impl<const L: usize> KeyKindSeal for super::FixedSizeKey<L> {}
+    impl KeyKindSeal for super::DynamicKey {}
+}
 
 /// An error type for decoding numeric keys.
 pub enum NumericKeyDecodeError {

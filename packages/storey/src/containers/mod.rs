@@ -255,7 +255,7 @@ where
 ///
 /// This trait is [sealed](https://rust-lang.github.io/api-guidelines/future-proofing.html#sealed-traits-protect-against-downstream-implementations-c-sealed)
 /// and cannot be implemented outside of this crate.
-pub trait StorableKind {}
+pub trait StorableKind: sealed::StorableKindSeal {}
 
 /// A terminal [`Storable`] kind. A terminal storable doesn't manage any subkeys,
 /// and is the end of the line in a composable collection.
@@ -270,3 +270,10 @@ pub struct NonTerminal;
 
 impl StorableKind for Terminal {}
 impl StorableKind for NonTerminal {}
+
+mod sealed {
+    pub trait StorableKindSeal {}
+
+    impl StorableKindSeal for super::Terminal {}
+    impl StorableKindSeal for super::NonTerminal {}
+}
