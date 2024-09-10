@@ -3,7 +3,7 @@
 
 mod column;
 mod item;
-mod map;
+pub mod map;
 
 use std::marker::PhantomData;
 
@@ -15,6 +15,8 @@ use crate::storage::IterableStorage;
 
 /// The fundamental trait every collection/container should implement.
 pub trait Storable {
+    type Kind: StorableKind;
+
     /// The accessor type for this collection/container. An accessor is a type that provides
     /// methods for reading and writing to the collection/container and encapsulates the
     /// specific [`Storage`] type used (the `S` type parameter here).
@@ -66,7 +68,7 @@ pub enum KVDecodeError<K, V> {
     Value(V),
 }
 
-/// A trait for collection accessors (see [`Storable::AccessorT`]) that provide iteration over
+/// A trait for collection accessors (see [`Storable::Accessor`]) that provide iteration over
 /// their contents.
 pub trait IterableAccessor: Sized {
     /// The [`Storable`] type this accessor is associated with.
@@ -244,4 +246,34 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next().map(|v| S::decode_value(&v))
     }
+}
+
+/// The kind of a storable.
+///
+/// This is used to differentiate between terminal and non-terminal storables.
+/// See also: [`Terminal`] and [`NonTerminal`].
+///
+/// This trait is [sealed](https://rust-lang.github.io/api-guidelines/future-proofing.html#sealed-traits-protect-against-downstream-implementations-c-sealed)
+/// and cannot be implemented outside of this crate.
+pub trait StorableKind: sealed::StorableKindSeal {}
+
+/// A terminal [`Storable`] kind. A terminal storable doesn't manage any subkeys,
+/// and is the end of the line in a composable collection.
+///
+/// An example of a terminal storable is [`Item`], but not [`Column`] or [`Map`].
+pub struct Terminal;
+
+/// A non-terminal [`Storable`] kind. A non-terminal storable manages subkeys.
+///
+/// Some examples of non-terminal storables are [`Column`] and [`Map`].
+pub struct NonTerminal;
+
+impl StorableKind for Terminal {}
+impl StorableKind for NonTerminal {}
+
+mod sealed {
+    pub trait StorableKindSeal {}
+
+    impl StorableKindSeal for super::Terminal {}
+    impl StorableKindSeal for super::NonTerminal {}
 }

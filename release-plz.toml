@@ -18,10 +18,9 @@ commit_parsers = [
     { message = "^changed", group = "<!-- 1 -->Changed" },
     { message = "^deprecated", group = "<!-- 2 -->Deprecated" },
     { message = "^fix", group = "<!-- 3 -->Fixed" },
-    { message = "^security", group = "<!-- 4 -->Security" },
+    { message = "^sec", group = "<!-- 4 -->Security" },
     { message = "^docs", group = "<!-- 5 -->Documentation" },
     { message = "^test", group = "<!-- 6 -->Tests" },
-    { message = "^.*", group = "<!-- 7 -->Other" },
 ]
 
 [workspace]
