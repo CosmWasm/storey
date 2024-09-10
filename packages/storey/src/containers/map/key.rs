@@ -26,6 +26,14 @@ impl Key for String {
     }
 }
 
+impl Key for Box<str> {
+    type Kind = DynamicKey;
+
+    fn encode(&self) -> Vec<u8> {
+        self.as_bytes().to_vec()
+    }
+}
+
 impl Key for str {
     type Kind = DynamicKey;
 
@@ -49,6 +57,95 @@ impl OwnedKey for String {
         std::str::from_utf8(bytes)
             .map(String::from)
             .map_err(|_| InvalidUtf8)
+    }
+}
+
+impl OwnedKey for Box<str> {
+    type Error = InvalidUtf8;
+
+    fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error>
+    where
+        Self: Sized,
+    {
+        std::str::from_utf8(bytes)
+            .map(Box::from)
+            .map_err(|_| InvalidUtf8)
+    }
+}
+
+impl Key for Vec<u8> {
+    type Kind = DynamicKey;
+
+    fn encode(&self) -> Vec<u8> {
+        self.clone()
+    }
+}
+
+impl Key for Box<[u8]> {
+    type Kind = DynamicKey;
+
+    fn encode(&self) -> Vec<u8> {
+        self.to_vec()
+    }
+}
+
+impl Key for [u8] {
+    type Kind = DynamicKey;
+
+    fn encode(&self) -> Vec<u8> {
+        self.to_vec()
+    }
+}
+
+impl<const N: usize> Key for [u8; N] {
+    type Kind = FixedSizeKey<N>;
+
+    fn encode(&self) -> Vec<u8> {
+        self.to_vec()
+    }
+}
+
+impl OwnedKey for Vec<u8> {
+    type Error = ();
+
+    fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error>
+    where
+        Self: Sized,
+    {
+        Ok(bytes.to_vec())
+    }
+}
+
+impl OwnedKey for Box<[u8]> {
+    type Error = ();
+
+    fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error>
+    where
+        Self: Sized,
+    {
+        Ok(bytes.to_vec().into_boxed_slice())
+    }
+}
+
+/// An error type for decoding arrays.
+pub enum ArrayDecodeError {
+    InvalidLength,
+}
+
+impl<const N: usize> OwnedKey for [u8; N] {
+    type Error = ArrayDecodeError;
+
+    fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error>
+    where
+        Self: Sized,
+    {
+        if bytes.len() != N {
+            return Err(ArrayDecodeError::InvalidLength);
+        }
+
+        let mut buf = [0; N];
+        buf.copy_from_slice(bytes);
+        Ok(buf)
     }
 }
 
@@ -114,11 +211,3 @@ macro_rules! impl_key_for_numeric {
 }
 
 impl_key_for_numeric!(u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
-
-impl<const N: usize> Key for [u8; N] {
-    type Kind = FixedSizeKey<N>;
-
-    fn encode(&self) -> Vec<u8> {
-        self.to_vec()
-    }
-}

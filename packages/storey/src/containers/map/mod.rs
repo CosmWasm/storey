@@ -223,7 +223,7 @@ where
     pub fn entry<Q>(&self, key: &Q) -> V::Accessor<StorageBranch<&S>>
     where
         K: Borrow<Q>,
-        Q: Key + ?Sized,
+        Q: Key<Kind = K::Kind> + ?Sized,
     {
         let behavior = <(K::Kind, V::Kind)>::BEHAVIOR;
 
@@ -267,7 +267,7 @@ where
     pub fn entry_mut<Q>(&mut self, key: &Q) -> V::Accessor<StorageBranch<&mut S>>
     where
         K: Borrow<Q>,
-        Q: Key + ?Sized,
+        Q: Key<Kind = K::Kind> + ?Sized,
     {
         let behavior = <(K::Kind, V::Kind)>::BEHAVIOR;
 
