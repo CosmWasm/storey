@@ -4,6 +4,7 @@ use crate::encoding::{DecodableWith, EncodableWith, Encoding};
 use crate::storage::StorageBranch;
 use crate::storage::{Storage, StorageMut};
 
+use super::common::TryGetError;
 use super::{Storable, Terminal};
 
 /// A single item in the storage.
@@ -117,7 +118,7 @@ where
 {
     /// Get the value of the item.
     ///
-    /// Returns `None` if the item doesn't exist (has not been set yet).
+    /// Returns `Ok(None)` if the item doesn't exist (has not been set yet).
     ///
     /// # Examples
     /// ```
@@ -148,6 +149,43 @@ where
             .get(&[])
             .map(|bytes| T::decode(&bytes))
             .transpose()
+    }
+
+    /// Get the value of the item.
+    ///
+    /// Returns [`TryGetError::Empty`] if the item doesn't exist (has not been
+    /// set yet).
+    ///
+    /// This is similar to [`get`](Self::get), but removes one level of nesting
+    /// so that you can get to your data faster, without having to unpack the
+    /// [`Option`].
+    ///
+    /// # Examples
+    /// ```
+    /// # use mocks::encoding::TestEncoding;
+    /// # use mocks::backend::TestStorage;
+    /// use storey::containers::Item;
+    ///
+    /// let mut storage = TestStorage::new();
+    /// let item = Item::<u64, TestEncoding>::new(0);
+    ///
+    /// item.access(&mut storage).set(&42).unwrap();
+    /// assert_eq!(item.access(&storage).try_get().unwrap(), 42);
+    /// ```
+    ///
+    /// ```
+    /// # use mocks::encoding::TestEncoding;
+    /// # use mocks::backend::TestStorage;
+    /// use storey::containers::Item;
+    ///
+    /// let storage = TestStorage::new();
+    /// let item = Item::<u64, TestEncoding>::new(0);
+    /// let access = item.access(&storage);
+    ///
+    /// assert!(access.try_get().is_err());
+    /// ```
+    pub fn try_get(&self) -> Result<T, TryGetError<E::DecodeError>> {
+        self.get()?.ok_or_else(|| TryGetError::Empty)
     }
 }
 

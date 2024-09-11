@@ -7,6 +7,7 @@ use crate::encoding::{DecodableWith, EncodableWith};
 use crate::storage::{IterableStorage, StorageBranch};
 use crate::storage::{Storage, StorageMut};
 
+use super::common::TryGetError;
 use super::{BoundFor, BoundedIterableAccessor, IterableAccessor, NonTerminal, Storable};
 
 const META_LAST_IX: &[u8] = &[0];
@@ -158,6 +159,8 @@ where
 {
     /// Get the value associated with the given key.
     ///
+    /// Returns `Ok(None)` if the entry doesn't exist (has not been set yet).
+    ///
     /// # Example
     /// ```
     /// # use mocks::encoding::TestEncoding;
@@ -177,6 +180,33 @@ where
             .get(&encode_ix(key))
             .map(|bytes| T::decode(&bytes))
             .transpose()
+    }
+
+    /// Get the value associated with the given key.
+    ///
+    /// Returns [`TryGetError::Empty`] if the entry doesn't exist (has not been
+    /// set yet).
+    ///
+    /// This is similar to [`get`](Self::get), but removes one level of nesting
+    /// so that you can get to your data faster, without having to unpack the
+    /// [`Option`].
+    ///
+    /// # Example
+    /// ```
+    /// # use mocks::encoding::TestEncoding;
+    /// # use mocks::backend::TestStorage;
+    /// use storey::containers::Column;
+    ///
+    /// let mut storage = TestStorage::new();
+    /// let column = Column::<u64, TestEncoding>::new(0);
+    /// let mut access = column.access(&mut storage);
+    ///
+    /// access.push(&1337).unwrap();
+    /// assert_eq!(access.try_get(0).unwrap(), 1337);
+    /// assert!(access.try_get(1).is_err());
+    /// ```
+    pub fn try_get(&self, key: u32) -> Result<T, TryGetError<E::DecodeError>> {
+        self.get(key)?.ok_or(TryGetError::Empty)
     }
 
     /// Get the length of the column. This is the number of elements actually stored,
