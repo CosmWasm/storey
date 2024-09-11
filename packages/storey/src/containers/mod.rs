@@ -2,6 +2,7 @@
 //! few fundamental collections/containers themselves.
 
 mod column;
+pub mod common;
 mod item;
 pub mod map;
 
