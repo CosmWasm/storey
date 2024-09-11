@@ -2,7 +2,7 @@
 name = "storey"
 description = "Storage abstractions for blockchains"
 readme = "../../README.md"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2021"
 rust-version = "1.65" # https://caniuse.rs/features/generic_associated_types
 authors.workspace = true
