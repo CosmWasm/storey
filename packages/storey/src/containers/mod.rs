@@ -107,6 +107,21 @@ pub trait IterableAccessor: Sized {
     }
 }
 
+/// This trait extends [`IterableAccessor`] with methods for bounded iteration. Not every
+/// iterable collection supports it, so this trait is separate.
+///
+/// Bounded iteration allows the user to specify a start and end bound for the iteration.
+///
+/// # Why not always support bounded iteration?
+///
+/// The reason bounded iteration isn't always supported is that it may not be possible to
+/// efficiently implement it. For example, a `Map<String, Map<u8, _>` must length-prefix
+/// the string keys when mapping them to the byte keys used in the storage backend. Otherwise,
+/// we'd not know where the string key ends and the nested `u8` key begins.
+///
+/// The length prefix will interfere with the ordering of the keys so that it's no longer
+/// lexicographical. It's deterministic, but rather confusing and unlikely to be useful. This
+/// in turn means the entries found between two string keys may not be the expected ones.
 pub trait BoundedIterableAccessor: IterableAccessor {
     /// Iterate over key-value pairs in this collection, respecting the given bounds.
     fn bounded_pairs<S, E>(
