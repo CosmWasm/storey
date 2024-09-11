@@ -187,6 +187,25 @@ where
     pub fn try_get(&self) -> Result<T, TryGetError<E::DecodeError>> {
         self.get()?.ok_or_else(|| TryGetError::Empty)
     }
+
+    /// Get the value of the item or a provided default.
+    ///
+    /// Returns the value of the item if it exists, otherwise returns the provided default.
+    ///
+    /// # Example
+    /// ```
+    /// # use mocks::encoding::TestEncoding;
+    /// # use mocks::backend::TestStorage;
+    /// use storey::containers::Item;
+    ///
+    /// let storage = TestStorage::new();
+    /// let item = Item::<u64, TestEncoding>::new(0);
+    ///
+    /// assert_eq!(item.access(&storage).get_or(42).unwrap(), 42);
+    /// ```
+    pub fn get_or(&self, default: T) -> Result<T, E::DecodeError> {
+        self.get().map(|opt| opt.unwrap_or(default))
+    }
 }
 
 impl<E, T, S> ItemAccess<E, T, S>
