@@ -209,6 +209,28 @@ where
         self.get(key)?.ok_or(TryGetError::Empty)
     }
 
+    /// Get the value associated with the given key or a provided default.
+    ///
+    /// Returns the provided default value if the entry doesn't exist (has not been set yet).
+    ///
+    /// # Example
+    /// ```
+    /// # use mocks::encoding::TestEncoding;
+    /// # use mocks::backend::TestStorage;
+    /// use storey::containers::Column;
+    ///
+    /// let mut storage = TestStorage::new();
+    /// let column = Column::<u64, TestEncoding>::new(0);
+    /// let mut access = column.access(&mut storage);
+    ///
+    /// assert_eq!(access.get_or(0, 42).unwrap(), 42);
+    /// access.push(&1337).unwrap();
+    /// assert_eq!(access.get_or(0, 42).unwrap(), 1337);
+    /// ```
+    pub fn get_or(&self, key: u32, default: T) -> Result<T, E::DecodeError> {
+        self.get(key).map(|value| value.unwrap_or(default))
+    }
+
     /// Get the length of the column. This is the number of elements actually stored,
     /// taking the possibility of removed elements into account.
     ///
