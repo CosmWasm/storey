@@ -5,6 +5,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+## [0.3.2] - 2024-09-11
+
+
+### Added
+- add remove to ItemAccess
+- add remove entry from map
+
+### Documentation
+- fix indentation
 ## [0.3.1] - 2024-06-19
 
 
