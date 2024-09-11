@@ -1,4 +1,4 @@
-/// A key that can be used with a [`Map`](crate::Map).
+/// A key that can be used with a [`Map`](super::Map).
 pub trait Key {
     /// The kind of key, meaning either fixed size or dynamic size.
     type Kind: KeyKind;
@@ -7,7 +7,7 @@ pub trait Key {
     fn encode(&self) -> Vec<u8>;
 }
 
-/// An owned key that can be used with a [`Map`](crate::Map).
+/// An owned key that can be used with a [`Map`](super::Map).
 pub trait OwnedKey: Key {
     /// The error type that can occur when decoding the key.
     type Error;
