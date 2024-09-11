@@ -1,6 +1,10 @@
-# _storey_
+# storey
 
-_storey_ is currently a pile of debris with some (hopefully) good ideas strewn about. One day, a new storage abstraction library for the decentralized world might rise from it. Like a phoenix from ashes. Or like a sleep-deprived commuter at 6 a.m. One of the two.
+`storey` is currently a pile of debris with some (hopefully) good ideas strewn about. One day, a new storage abstraction library for the decentralized world might rise from it. Like a phoenix from ashes. Or like a sleep-deprived commuter at 6 a.m. One of the two.
+
+## Guide
+
+A (possibly still incomplete) guide can be found [here](https://docs.cosmwasm.com/storey).
 
 ## Loose goals (subject to change)
 
