@@ -10,6 +10,9 @@ use crate::storage::{Storage, StorageMut};
 use super::common::TryGetError;
 use super::{BoundFor, BoundedIterableAccessor, IterableAccessor, NonTerminal, Storable};
 
+/// The last index that has been pushed to the column.
+/// This does not have to be the index of the last element as it is
+/// not reset in case the last element is removed.
 const META_LAST_IX: &[u8] = &[0];
 const META_LEN: &[u8] = &[1];
 
@@ -480,6 +483,36 @@ mod tests {
 
         assert_eq!(access.get(0).unwrap(), None);
         assert_eq!(access.get(1).unwrap(), Some(9001));
+        assert_eq!(access.len().unwrap(), 1);
+    }
+
+    #[test]
+    fn remove() {
+        let mut storage = TestStorage::new();
+
+        let column = Column::<u64, TestEncoding>::new(0);
+        let mut access = column.access(&mut storage);
+
+        assert_eq!(access.push(&1337).unwrap(), 0);
+        assert_eq!(access.push(&42).unwrap(), 1);
+        assert_eq!(access.push(&17).unwrap(), 2);
+        assert_eq!(access.len().unwrap(), 3);
+
+        // remove middle
+        access.remove(1).unwrap();
+        assert_eq!(access.len().unwrap(), 2);
+
+        // remove first
+        access.remove(0).unwrap();
+        assert_eq!(access.len().unwrap(), 1);
+
+        // remove last
+        access.remove(2).unwrap();
+        assert_eq!(access.len().unwrap(), 0);
+
+        // Above removals do not reset the auto-incrementor,
+        // such that we get a fresh key for the next push.
+        assert_eq!(access.push(&99).unwrap(), 3);
         assert_eq!(access.len().unwrap(), 1);
     }
 
