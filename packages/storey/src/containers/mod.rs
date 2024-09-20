@@ -125,14 +125,13 @@ pub trait IterableAccessor: Sized {
 /// in turn means the entries found between two string keys may not be the expected ones.
 pub trait BoundedIterableAccessor: IterableAccessor {
     /// Iterate over key-value pairs in this collection, respecting the given bounds.
-    fn bounded_pairs<S, E>(
+    fn bounded_pairs<B>(
         &self,
-        start: Option<S>,
-        end: Option<E>,
+        start: Option<B>,
+        end: Option<B>,
     ) -> StorableIter<'_, Self::Storable, Self::Storage>
     where
-        S: BoundFor<Self::Storable>,
-        E: BoundFor<Self::Storable>,
+        B: BoundFor<Self::Storable>,
     {
         let start = start.map(|b| b.into_bytes());
         let end = end.map(|b| b.into_bytes());
@@ -144,14 +143,13 @@ pub trait BoundedIterableAccessor: IterableAccessor {
     }
 
     /// Iterate over keys in this collection, respecting the given bounds.
-    fn bounded_keys<S, E>(
+    fn bounded_keys<B>(
         &self,
-        start: Option<S>,
-        end: Option<E>,
+        start: Option<B>,
+        end: Option<B>,
     ) -> StorableKeys<'_, Self::Storable, Self::Storage>
     where
-        S: BoundFor<Self::Storable>,
-        E: BoundFor<Self::Storable>,
+        B: BoundFor<Self::Storable>,
     {
         let start = start.map(|b| b.into_bytes());
         let end = end.map(|b| b.into_bytes());
@@ -163,14 +161,13 @@ pub trait BoundedIterableAccessor: IterableAccessor {
     }
 
     /// Iterate over values in this collection, respecting the given bounds.
-    fn bounded_values<S, E>(
+    fn bounded_values<B>(
         &self,
-        start: Option<S>,
-        end: Option<E>,
+        start: Option<B>,
+        end: Option<B>,
     ) -> StorableValues<'_, Self::Storable, Self::Storage>
     where
-        S: BoundFor<Self::Storable>,
-        E: BoundFor<Self::Storable>,
+        B: BoundFor<Self::Storable>,
     {
         let start = start.map(|b| b.into_bytes());
         let end = end.map(|b| b.into_bytes());
