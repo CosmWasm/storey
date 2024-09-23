@@ -558,6 +558,7 @@ mod tests {
         access.push(&2).unwrap();
         access.remove(2).unwrap();
 
+        // start and end set
         assert_eq!(
             access
                 .bounded_pairs(Some(1), Some(4))
@@ -565,7 +566,6 @@ mod tests {
                 .unwrap(),
             vec![(1, 42), (3, 1)]
         );
-
         assert_eq!(
             access
                 .bounded_keys(Some(1), Some(4))
@@ -573,13 +573,58 @@ mod tests {
                 .unwrap(),
             vec![1, 3]
         );
-
         assert_eq!(
             access
                 .bounded_values(Some(1), Some(4))
                 .collect::<Result<Vec<_>, _>>()
                 .unwrap(),
             vec![42, 1]
+        );
+
+        // end unset
+        assert_eq!(
+            access
+                .bounded_pairs(Some(1), None)
+                .collect::<Result<Vec<_>, _>>()
+                .unwrap(),
+            vec![(1, 42), (3, 1), (4, 2)]
+        );
+        assert_eq!(
+            access
+                .bounded_keys(Some(1), None)
+                .collect::<Result<Vec<_>, _>>()
+                .unwrap(),
+            vec![1, 3, 4]
+        );
+        assert_eq!(
+            access
+                .bounded_values(Some(1), None)
+                .collect::<Result<Vec<_>, _>>()
+                .unwrap(),
+            vec![42, 1, 2]
+        );
+
+        // start unset
+        assert_eq!(
+            access
+                .bounded_pairs(None, Some(4))
+                .collect::<Result<Vec<_>, _>>()
+                .unwrap(),
+            vec![(0, 1337), (1, 42), (3, 1)]
+        );
+        assert_eq!(
+            access
+                .bounded_keys(None, Some(4))
+                .collect::<Result<Vec<_>, _>>()
+                .unwrap(),
+            vec![0, 1, 3]
+        );
+        assert_eq!(
+            access
+                .bounded_values(None, Some(4))
+                .collect::<Result<Vec<_>, _>>()
+                .unwrap(),
+            vec![1337, 42, 1]
         );
     }
 }
