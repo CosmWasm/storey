@@ -457,6 +457,8 @@ pub enum LenError {
 
 #[cfg(test)]
 mod tests {
+    use crate::containers::RevIterableAccessor as _;
+
     use super::*;
 
     use mocks::backend::TestStorage;
@@ -541,6 +543,34 @@ mod tests {
         assert_eq!(
             access.values().collect::<Result<Vec<_>, _>>().unwrap(),
             vec![1337, 9001]
+        );
+    }
+
+    #[test]
+    fn rev_iteration() {
+        let mut storage = TestStorage::new();
+
+        let column = Column::<u64, TestEncoding>::new(0);
+        let mut access = column.access(&mut storage);
+
+        access.push(&1337).unwrap();
+        access.push(&42).unwrap();
+        access.push(&9001).unwrap();
+        access.remove(1).unwrap();
+
+        assert_eq!(
+            access.rev_pairs().collect::<Result<Vec<_>, _>>().unwrap(),
+            vec![(2, 9001), (0, 1337)]
+        );
+
+        assert_eq!(
+            access.rev_keys().collect::<Result<Vec<_>, _>>().unwrap(),
+            vec![2, 0]
+        );
+
+        assert_eq!(
+            access.rev_values().collect::<Result<Vec<_>, _>>().unwrap(),
+            vec![9001, 1337]
         );
     }
 
