@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+## [0.4.0] - 2024-10-15
+
+
+### Fixed
+- [**breaking**] [#63](https://github.com/CosmWasm/storey/pull/63) sane ordering for signed map keys
 
 ## [0.3.0] - 2024-09-11
 
