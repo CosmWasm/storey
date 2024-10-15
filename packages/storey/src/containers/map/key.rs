@@ -175,7 +175,9 @@ mod sealed {
 }
 
 /// An error type for decoding numeric keys.
+#[derive(Debug, PartialEq, Eq, Clone, Copy, thiserror::Error)]
 pub enum NumericKeyDecodeError {
+    #[error("invalid length")]
     InvalidLength,
 }
 
@@ -210,4 +212,73 @@ macro_rules! impl_key_for_numeric {
     };
 }
 
-impl_key_for_numeric!(u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
+impl_key_for_numeric!(u8, u16, u32, u64, u128);
+
+macro_rules! impl_key_for_signed {
+    ($($t:ty : $ut:ty),*) => {
+        $(
+            impl Key for $t {
+                type Kind = FixedSizeKey<{(Self::BITS / 8) as usize}>;
+
+                fn encode(&self) -> Vec<u8> {
+                   (*self as $ut ^ <$t>::MIN as $ut).to_be_bytes().to_vec()
+                }
+            }
+
+            impl OwnedKey for $t {
+                type Error = NumericKeyDecodeError;
+
+                fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error>
+                where
+                    Self: Sized,
+                {
+                    if bytes.len() != std::mem::size_of::<Self>() {
+                        return Err(NumericKeyDecodeError::InvalidLength);
+                    }
+
+                    let mut buf = [0; std::mem::size_of::<Self>()];
+                    buf.copy_from_slice(bytes);
+                    Ok((Self::from_be_bytes(buf) as $ut ^ <$t>::MIN as $ut) as _)
+                }
+            }
+        )*
+    };
+}
+
+impl_key_for_signed!(i8 : u8, i16 : u16, i32 : u32, i64 : u64, i128 : u128);
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn signed_int_ordering() {
+        let data = [-555555555, -3333, -1, 0, 1, 3333, 55555555];
+
+        let mut encoded = data.iter().map(|&x| x.encode()).collect::<Vec<_>>();
+        encoded.sort();
+
+        let decoded = encoded
+            .iter()
+            .map(|x| i32::from_bytes(x).unwrap())
+            .collect::<Vec<_>>();
+
+        assert_eq!(&data[..], &decoded);
+    }
+
+    #[test]
+    fn signed_int_encoding() {
+        // negative values have the leftmost bit unset
+        assert_eq!((i32::MIN).encode(), [0b00000000, 0x00, 0x00, 0x00]);
+        assert_eq!((-2000i32).encode(), [0b01111111, 0xff, 248, 48]);
+        assert_eq!((-3i32).encode(), [0b01111111, 0xff, 0xff, 0xfd]);
+        assert_eq!((-2i32).encode(), [0b01111111, 0xff, 0xff, 0xfe]);
+        assert_eq!((-1i32).encode(), [0b01111111, 0xff, 0xff, 0xff]);
+
+        // non-negative values are BE encoded, but with the leftmost bit set
+        assert_eq!(0i32.encode(), [0b10000000, 0x00, 0x00, 0x00]);
+        assert_eq!(1i32.encode(), [0b10000000, 0x00, 0x00, 0x01]);
+        assert_eq!(2i32.encode(), [0b10000000, 0x00, 0x00, 0x02]);
+        assert_eq!(i32::MAX.encode(), [0b11111111, 0xff, 0xff, 0xff]);
+    }
+}
