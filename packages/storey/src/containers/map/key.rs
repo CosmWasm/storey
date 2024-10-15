@@ -265,4 +265,20 @@ mod tests {
 
         assert_eq!(&data[..], &decoded);
     }
+
+    #[test]
+    fn signed_int_encoding() {
+        // negative values have the leftmost bit unset
+        assert_eq!((i32::MIN).encode(), [0b00000000, 0x00, 0x00, 0x00]);
+        assert_eq!((-2000i32).encode(), [0b01111111, 0xff, 248, 48]);
+        assert_eq!((-3i32).encode(), [0b01111111, 0xff, 0xff, 0xfd]);
+        assert_eq!((-2i32).encode(), [0b01111111, 0xff, 0xff, 0xfe]);
+        assert_eq!((-1i32).encode(), [0b01111111, 0xff, 0xff, 0xff]);
+
+        // non-negative values are BE encoded, but with the leftmost bit set
+        assert_eq!(0i32.encode(), [0b10000000, 0x00, 0x00, 0x00]);
+        assert_eq!(1i32.encode(), [0b10000000, 0x00, 0x00, 0x01]);
+        assert_eq!(2i32.encode(), [0b10000000, 0x00, 0x00, 0x02]);
+        assert_eq!(i32::MAX.encode(), [0b11111111, 0xff, 0xff, 0xff]);
+    }
 }
