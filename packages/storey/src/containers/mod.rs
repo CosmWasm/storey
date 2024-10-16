@@ -11,6 +11,7 @@ use std::marker::PhantomData;
 pub use column::{Column, ColumnAccess};
 pub use item::{Item, ItemAccess};
 pub use map::{Map, MapAccess};
+use storey_storage::RevIterableStorage;
 
 use crate::storage::IterableStorage;
 
@@ -84,7 +85,9 @@ pub trait IterableAccessor: Sized {
     fn storage(&self) -> &Self::Storage;
 
     /// Iterate over key-value pairs in this collection.
-    fn pairs(&self) -> StorableIter<'_, Self::Storable, Self::Storage> {
+    fn pairs(
+        &self,
+    ) -> StorableIter<Self::Storable, <Self::Storage as IterableStorage>::PairsIterator<'_>> {
         StorableIter {
             inner: self.storage().pairs(None, None),
             phantom: PhantomData,
@@ -92,7 +95,9 @@ pub trait IterableAccessor: Sized {
     }
 
     /// Iterate over keys in this collection.
-    fn keys(&self) -> StorableKeys<'_, Self::Storable, Self::Storage> {
+    fn keys(
+        &self,
+    ) -> StorableKeys<Self::Storable, <Self::Storage as IterableStorage>::KeysIterator<'_>> {
         StorableKeys {
             inner: self.storage().keys(None, None),
             phantom: PhantomData,
@@ -100,12 +105,61 @@ pub trait IterableAccessor: Sized {
     }
 
     /// Iterate over values in this collection.
-    fn values(&self) -> StorableValues<'_, Self::Storable, Self::Storage> {
+    fn values(
+        &self,
+    ) -> StorableValues<Self::Storable, <Self::Storage as IterableStorage>::ValuesIterator<'_>>
+    {
         StorableValues {
             inner: self.storage().values(None, None),
             phantom: PhantomData,
         }
     }
+}
+
+pub trait RevIterableAccessor
+where
+    Self: IterableAccessor,
+    Self::Storage: RevIterableStorage,
+{
+    /// Iterate over key-value pairs in this collection in reverse order.
+    fn rev_pairs(
+        &self,
+    ) -> StorableIter<Self::Storable, <Self::Storage as RevIterableStorage>::RevPairsIterator<'_>>
+    {
+        StorableIter {
+            inner: self.storage().rev_pairs(None, None),
+            phantom: PhantomData,
+        }
+    }
+
+    /// Iterate over keys in this collection in reverse order.
+    fn rev_keys(
+        &self,
+    ) -> StorableKeys<Self::Storable, <Self::Storage as RevIterableStorage>::RevKeysIterator<'_>>
+    {
+        StorableKeys {
+            inner: self.storage().rev_keys(None, None),
+            phantom: PhantomData,
+        }
+    }
+
+    /// Iterate over values in this collection in reverse order.
+    fn rev_values(
+        &self,
+    ) -> StorableValues<Self::Storable, <Self::Storage as RevIterableStorage>::RevValuesIterator<'_>>
+    {
+        StorableValues {
+            inner: self.storage().rev_values(None, None),
+            phantom: PhantomData,
+        }
+    }
+}
+
+impl<I> RevIterableAccessor for I
+where
+    I: IterableAccessor,
+    I::Storage: RevIterableStorage,
+{
 }
 
 /// This trait extends [`IterableAccessor`] with methods for bounded iteration. Not every
@@ -129,7 +183,7 @@ pub trait BoundedIterableAccessor: IterableAccessor {
         &self,
         start: Option<B>,
         end: Option<B>,
-    ) -> StorableIter<'_, Self::Storable, Self::Storage>
+    ) -> StorableIter<Self::Storable, <Self::Storage as IterableStorage>::PairsIterator<'_>>
     where
         B: BoundFor<Self::Storable>,
     {
@@ -147,7 +201,7 @@ pub trait BoundedIterableAccessor: IterableAccessor {
         &self,
         start: Option<B>,
         end: Option<B>,
-    ) -> StorableKeys<'_, Self::Storable, Self::Storage>
+    ) -> StorableKeys<Self::Storable, <Self::Storage as IterableStorage>::KeysIterator<'_>>
     where
         B: BoundFor<Self::Storable>,
     {
@@ -165,7 +219,7 @@ pub trait BoundedIterableAccessor: IterableAccessor {
         &self,
         start: Option<B>,
         end: Option<B>,
-    ) -> StorableValues<'_, Self::Storable, Self::Storage>
+    ) -> StorableValues<Self::Storable, <Self::Storage as IterableStorage>::ValuesIterator<'_>>
     where
         B: BoundFor<Self::Storable>,
     {
@@ -179,6 +233,82 @@ pub trait BoundedIterableAccessor: IterableAccessor {
     }
 }
 
+/// This trait extends [`BoundedIterableAccessor`] with methods for bounded reverse iteration.
+/// Not every iterable collection supports it, so this trait is separate.
+///
+/// Bounded reverse iteration allows the user to specify a start and end bound for the iteration,
+/// but in reverse order.
+///
+/// # Why not always support bounded reverse iteration?
+///
+/// The same reasons as for [bounded iteration](BoundedIterableAccessor) apply.
+pub trait BoundedRevIterableAccessor
+where
+    Self: BoundedIterableAccessor,
+    Self::Storage: RevIterableStorage,
+{
+    /// Iterate over key-value pairs in this collection in reverse order, respecting the given bounds.
+    fn bounded_rev_pairs<B>(
+        &self,
+        start: Option<B>,
+        end: Option<B>,
+    ) -> StorableIter<Self::Storable, <Self::Storage as RevIterableStorage>::RevPairsIterator<'_>>
+    where
+        B: BoundFor<Self::Storable>,
+    {
+        let start = start.map(|b| b.into_bytes());
+        let end = end.map(|b| b.into_bytes());
+
+        StorableIter {
+            inner: self.storage().rev_pairs(start.as_deref(), end.as_deref()),
+            phantom: PhantomData,
+        }
+    }
+
+    /// Iterate over keys in this collection in reverse order, respecting the given bounds.
+    fn bounded_rev_keys<B>(
+        &self,
+        start: Option<B>,
+        end: Option<B>,
+    ) -> StorableKeys<Self::Storable, <Self::Storage as RevIterableStorage>::RevKeysIterator<'_>>
+    where
+        B: BoundFor<Self::Storable>,
+    {
+        let start = start.map(|b| b.into_bytes());
+        let end = end.map(|b| b.into_bytes());
+
+        StorableKeys {
+            inner: self.storage().rev_keys(start.as_deref(), end.as_deref()),
+            phantom: PhantomData,
+        }
+    }
+
+    /// Iterate over values in this collection in reverse order, respecting the given bounds.
+    fn bounded_rev_values<B>(
+        &self,
+        start: Option<B>,
+        end: Option<B>,
+    ) -> StorableValues<Self::Storable, <Self::Storage as RevIterableStorage>::RevValuesIterator<'_>>
+    where
+        B: BoundFor<Self::Storable>,
+    {
+        let start = start.map(|b| b.into_bytes());
+        let end = end.map(|b| b.into_bytes());
+
+        StorableValues {
+            inner: self.storage().rev_values(start.as_deref(), end.as_deref()),
+            phantom: PhantomData,
+        }
+    }
+}
+
+impl<I> BoundedRevIterableAccessor for I
+where
+    I: BoundedIterableAccessor,
+    I::Storage: RevIterableStorage,
+{
+}
+
 /// A type that can be used as bounds for iteration over a given collection.
 ///
 /// As an example, a collection `Foo` with string-y keys can accept both `String` and
@@ -190,19 +320,15 @@ pub trait BoundFor<T> {
 }
 
 /// The iterator over key-value pairs in a collection.
-pub struct StorableIter<'i, S, B>
-where
-    S: Storable,
-    B: IterableStorage + 'i,
-{
-    inner: B::PairsIterator<'i>,
+pub struct StorableIter<S, I> {
+    inner: I,
     phantom: PhantomData<S>,
 }
 
-impl<'i, S, B> Iterator for StorableIter<'i, S, B>
+impl<S, I> Iterator for StorableIter<S, I>
 where
     S: Storable,
-    B: IterableStorage + 'i,
+    I: Iterator<Item = (Vec<u8>, Vec<u8>)>,
 {
     type Item = Result<(S::Key, S::Value), KVDecodeError<S::KeyDecodeError, S::ValueDecodeError>>;
 
@@ -218,19 +344,15 @@ where
 }
 
 /// The iterator over keys in a collection.
-pub struct StorableKeys<'i, S, B>
-where
-    S: Storable,
-    B: IterableStorage + 'i,
-{
-    inner: B::KeysIterator<'i>,
+pub struct StorableKeys<S, I> {
+    inner: I,
     phantom: PhantomData<S>,
 }
 
-impl<'i, S, B> Iterator for StorableKeys<'i, S, B>
+impl<S, I> Iterator for StorableKeys<S, I>
 where
     S: Storable,
-    B: IterableStorage + 'i,
+    I: Iterator<Item = Vec<u8>>,
 {
     type Item = Result<S::Key, S::KeyDecodeError>;
 
@@ -240,19 +362,15 @@ where
 }
 
 /// The iterator over values in a collection.
-pub struct StorableValues<'i, S, B>
-where
-    S: Storable,
-    B: IterableStorage + 'i,
-{
-    inner: B::ValuesIterator<'i>,
+pub struct StorableValues<S, I> {
+    inner: I,
     phantom: PhantomData<S>,
 }
 
-impl<'i, S, B> Iterator for StorableValues<'i, S, B>
+impl<S, I> Iterator for StorableValues<S, I>
 where
     S: Storable,
-    B: IterableStorage + 'i,
+    I: Iterator<Item = Vec<u8>>,
 {
     type Item = Result<S::Value, S::ValueDecodeError>;
 
