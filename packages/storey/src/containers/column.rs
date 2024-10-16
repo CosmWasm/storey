@@ -457,7 +457,7 @@ pub enum LenError {
 
 #[cfg(test)]
 mod tests {
-    use crate::containers::RevIterableAccessor as _;
+    use crate::containers::{BoundedRevIterableAccessor as _, RevIterableAccessor as _};
 
     use super::*;
 
@@ -655,6 +655,53 @@ mod tests {
                 .collect::<Result<Vec<_>, _>>()
                 .unwrap(),
             vec![1337, 42, 1]
+        );
+    }
+
+    #[test]
+    fn bounded_rev_iteration() {
+        let mut storage = TestStorage::new();
+
+        let column = Column::<u64, TestEncoding>::new(0);
+        let mut access = column.access(&mut storage);
+
+        access.push(&1337).unwrap();
+        access.push(&42).unwrap();
+        access.push(&9001).unwrap();
+        access.push(&1).unwrap();
+        access.push(&2).unwrap();
+        access.remove(2).unwrap();
+
+        // start and end set
+        assert_eq!(
+            access
+                .bounded_rev_pairs(Some(1), Some(4))
+                .collect::<Result<Vec<_>, _>>()
+                .unwrap(),
+            vec![(3, 1), (1, 42)]
+        );
+        assert_eq!(
+            access
+                .bounded_rev_keys(Some(1), Some(4))
+                .collect::<Result<Vec<_>, _>>()
+                .unwrap(),
+            vec![3, 1]
+        );
+        assert_eq!(
+            access
+                .bounded_rev_values(Some(1), Some(4))
+                .collect::<Result<Vec<_>, _>>()
+                .unwrap(),
+            vec![1, 42]
+        );
+
+        // end unset
+        assert_eq!(
+            access
+                .bounded_rev_pairs(Some(1), None)
+                .collect::<Result<Vec<_>, _>>()
+                .unwrap(),
+            vec![(4, 2), (3, 1), (1, 42)]
         );
     }
 }
