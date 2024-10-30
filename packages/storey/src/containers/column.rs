@@ -10,11 +10,17 @@ use crate::storage::{Storage, StorageMut};
 use super::common::TryGetError;
 use super::{BoundFor, BoundedIterableAccessor, IterableAccessor, NonTerminal, Storable};
 
-/// The last index that has been pushed to the column.
-/// This does not have to be the index of the last element as it is
-/// not reset in case the last element is removed.
-const META_LAST_IX: &[u8] = &[0];
-const META_LEN: &[u8] = &[1];
+/// The first (lowest) index that is pushed to the column.
+const FIRST_INDEX: u32 = 1;
+
+/// Storage keys for metadata.
+mod meta_keys {
+    /// The last index that has been pushed to the column.
+    /// This does not have to be the index of the last element as it is
+    /// not reset in case the last element is removed.
+    pub const META_LAST_IX: &[u8] = &[0];
+    pub const META_LEN: &[u8] = &[1];
+}
 
 /// A collection of rows indexed by `u32` keys. This is somewhat similar to a traditional
 /// database table with an auto-incrementing primary key.
@@ -34,9 +40,9 @@ const META_LEN: &[u8] = &[1];
 /// access.push(&1337).unwrap();
 /// access.push(&42).unwrap();
 ///
-/// assert_eq!(access.get(0).unwrap(), Some(1337));
-/// assert_eq!(access.get(1).unwrap(), Some(42));
-/// assert_eq!(access.get(2).unwrap(), None);
+/// assert_eq!(access.get(1).unwrap(), Some(1337));
+/// assert_eq!(access.get(2).unwrap(), Some(42));
+/// assert_eq!(access.get(3).unwrap(), None);
 /// ```
 pub struct Column<T, E> {
     prefix: u8,
@@ -175,8 +181,8 @@ where
     /// let mut access = column.access(&mut storage);
     ///
     /// access.push(&1337).unwrap();
-    /// assert_eq!(access.get(0).unwrap(), Some(1337));
-    /// assert_eq!(access.get(1).unwrap(), None);
+    /// assert_eq!(access.get(1).unwrap(), Some(1337));
+    /// assert_eq!(access.get(2).unwrap(), None);
     /// ```
     pub fn get(&self, key: u32) -> Result<Option<T>, E::DecodeError> {
         self.storage
@@ -205,8 +211,8 @@ where
     /// let mut access = column.access(&mut storage);
     ///
     /// access.push(&1337).unwrap();
-    /// assert_eq!(access.try_get(0).unwrap(), 1337);
-    /// assert!(access.try_get(1).is_err());
+    /// assert_eq!(access.try_get(1).unwrap(), 1337);
+    /// assert!(access.try_get(2).is_err());
     /// ```
     pub fn try_get(&self, key: u32) -> Result<T, TryGetError<E::DecodeError>> {
         self.get(key)?.ok_or(TryGetError::Empty)
@@ -226,9 +232,9 @@ where
     /// let column = Column::<u64, TestEncoding>::new(0);
     /// let mut access = column.access(&mut storage);
     ///
-    /// assert_eq!(access.get_or(0, 42).unwrap(), 42);
+    /// assert_eq!(access.get_or(1, 42).unwrap(), 42);
     /// access.push(&1337).unwrap();
-    /// assert_eq!(access.get_or(0, 42).unwrap(), 1337);
+    /// assert_eq!(access.get_or(1, 42).unwrap(), 1337);
     /// ```
     pub fn get_or(&self, key: u32, default: T) -> Result<T, E::DecodeError> {
         self.get(key).map(|value| value.unwrap_or(default))
@@ -257,7 +263,7 @@ where
         // TODO: bounds check + error handlinge
 
         self.storage
-            .get_meta(META_LEN)
+            .get_meta(meta_keys::META_LEN)
             .map(|bytes| {
                 if bytes.len() != 4 {
                     Err(LenError::InconsistentState)
@@ -313,40 +319,47 @@ where
 {
     /// Append a new value to the end of the column.
     ///
+    /// Returns the key of the newly inserted value. If the column is empty, the first
+    /// key will be `1`.
+    ///
     /// # Example
     /// ```
     /// # use mocks::encoding::TestEncoding;
     /// # use mocks::backend::TestStorage;
     /// use storey::containers::Column;
     ///
+    /// const COLUMN_KEY: u8 = 0;
+    ///
     /// let mut storage = TestStorage::new();
-    /// let column = Column::<u64, TestEncoding>::new(0);
+    /// let column = Column::<u64, TestEncoding>::new(COLUMN_KEY);
     /// let mut access = column.access(&mut storage);
     ///
-    /// access.push(&1337).unwrap();
-    /// access.push(&42).unwrap();
+    /// assert_eq!(access.push(&1337).unwrap(), 1);
+    /// assert_eq!(access.push(&42).unwrap(), 2);
     /// ```
     pub fn push(&mut self, value: &T) -> Result<u32, PushError<E::EncodeError>> {
         let bytes = value.encode()?;
 
         let ix = match self
             .storage
-            .get_meta(META_LAST_IX)
+            .get_meta(meta_keys::META_LAST_IX)
             .map(|bytes| u32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]))
         {
             Some(last_ix) => last_ix.checked_add(1).ok_or(PushError::IndexOverflow)?,
-            None => 0,
+            None => FIRST_INDEX,
         };
 
         self.storage.set(&encode_ix(ix), &bytes);
 
-        self.storage.set_meta(META_LAST_IX, &(ix).to_be_bytes());
+        self.storage
+            .set_meta(meta_keys::META_LAST_IX, &(ix).to_be_bytes());
         let len = self
             .storage
-            .get_meta(META_LEN)
+            .get_meta(meta_keys::META_LEN)
             .map(|bytes| u32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]))
             .unwrap_or(0);
-        self.storage.set_meta(META_LEN, &(len + 1).to_be_bytes());
+        self.storage
+            .set_meta(meta_keys::META_LEN, &(len + 1).to_be_bytes());
 
         Ok(ix)
     }
@@ -364,10 +377,10 @@ where
     /// let mut access = column.access(&mut storage);
     ///
     /// access.push(&1337).unwrap();
-    /// assert_eq!(access.get(0).unwrap(), Some(1337));
+    /// assert_eq!(access.get(1).unwrap(), Some(1337));
     ///
-    /// access.update(0, &9001).unwrap();
-    /// assert_eq!(access.get(0).unwrap(), Some(9001));
+    /// access.update(1, &9001).unwrap();
+    /// assert_eq!(access.get(1).unwrap(), Some(9001));
     /// ```
     pub fn update(&mut self, key: u32, value: &T) -> Result<(), UpdateError<E::EncodeError>> {
         self.storage
@@ -396,20 +409,21 @@ where
     /// let mut access = column.access(&mut storage);
     ///
     /// access.push(&1337).unwrap();
-    /// assert_eq!(access.get(0).unwrap(), Some(1337));
+    /// assert_eq!(access.get(1).unwrap(), Some(1337));
     ///
-    /// access.remove(0).unwrap();
-    /// assert_eq!(access.get(0).unwrap(), None);
+    /// access.remove(1).unwrap();
+    /// assert_eq!(access.get(1).unwrap(), None);
     /// ```
     pub fn remove(&mut self, key: u32) -> Result<(), RemoveError> {
         self.storage.remove(&encode_ix(key));
 
         let len = self
             .storage
-            .get_meta(META_LEN)
+            .get_meta(meta_keys::META_LEN)
             .map(|bytes| u32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]))
             .ok_or(RemoveError::InconsistentState)?;
-        self.storage.set_meta(META_LEN, &(len - 1).to_be_bytes());
+        self.storage
+            .set_meta(meta_keys::META_LEN, &(len - 1).to_be_bytes());
 
         Ok(())
     }
@@ -471,20 +485,20 @@ mod tests {
         let column = Column::<u64, TestEncoding>::new(0);
         let mut access = column.access(&mut storage);
 
-        assert_eq!(access.push(&1337).unwrap(), 0);
-        assert_eq!(access.push(&42).unwrap(), 1);
+        assert_eq!(access.push(&1337).unwrap(), 1);
+        assert_eq!(access.push(&42).unwrap(), 2);
 
-        assert_eq!(access.get(0).unwrap(), Some(1337));
-        assert_eq!(access.get(1).unwrap(), Some(42));
-        assert_eq!(access.get(2).unwrap(), None);
+        assert_eq!(access.get(1).unwrap(), Some(1337));
+        assert_eq!(access.get(2).unwrap(), Some(42));
+        assert_eq!(access.get(3).unwrap(), None);
         assert_eq!(access.len().unwrap(), 2);
 
-        access.remove(0).unwrap();
-        assert_eq!(access.update(0, &9001), Err(UpdateError::NotFound));
-        access.update(1, &9001).unwrap();
+        access.remove(1).unwrap();
+        assert_eq!(access.update(1, &9001), Err(UpdateError::NotFound));
+        access.update(2, &9001).unwrap();
 
-        assert_eq!(access.get(0).unwrap(), None);
-        assert_eq!(access.get(1).unwrap(), Some(9001));
+        assert_eq!(access.get(1).unwrap(), None);
+        assert_eq!(access.get(2).unwrap(), Some(9001));
         assert_eq!(access.len().unwrap(), 1);
     }
 
@@ -495,26 +509,26 @@ mod tests {
         let column = Column::<u64, TestEncoding>::new(0);
         let mut access = column.access(&mut storage);
 
-        assert_eq!(access.push(&1337).unwrap(), 0);
-        assert_eq!(access.push(&42).unwrap(), 1);
-        assert_eq!(access.push(&17).unwrap(), 2);
+        assert_eq!(access.push(&1337).unwrap(), 1);
+        assert_eq!(access.push(&42).unwrap(), 2);
+        assert_eq!(access.push(&17).unwrap(), 3);
         assert_eq!(access.len().unwrap(), 3);
 
         // remove middle
-        access.remove(1).unwrap();
+        access.remove(2).unwrap();
         assert_eq!(access.len().unwrap(), 2);
 
         // remove first
-        access.remove(0).unwrap();
+        access.remove(10).unwrap();
         assert_eq!(access.len().unwrap(), 1);
 
         // remove last
-        access.remove(2).unwrap();
+        access.remove(3).unwrap();
         assert_eq!(access.len().unwrap(), 0);
 
         // Above removals do not reset the auto-incrementor,
         // such that we get a fresh key for the next push.
-        assert_eq!(access.push(&99).unwrap(), 3);
+        assert_eq!(access.push(&99).unwrap(), 4);
         assert_eq!(access.len().unwrap(), 1);
     }
 
@@ -528,16 +542,16 @@ mod tests {
         access.push(&1337).unwrap();
         access.push(&42).unwrap();
         access.push(&9001).unwrap();
-        access.remove(1).unwrap();
+        access.remove(2).unwrap();
 
         assert_eq!(
             access.pairs().collect::<Result<Vec<_>, _>>().unwrap(),
-            vec![(0, 1337), (2, 9001)]
+            vec![(1, 1337), (3, 9001)]
         );
 
         assert_eq!(
             access.keys().collect::<Result<Vec<_>, _>>().unwrap(),
-            vec![0, 2]
+            vec![1, 3]
         );
 
         assert_eq!(
@@ -556,16 +570,16 @@ mod tests {
         access.push(&1337).unwrap();
         access.push(&42).unwrap();
         access.push(&9001).unwrap();
-        access.remove(1).unwrap();
+        access.remove(2).unwrap();
 
         assert_eq!(
             access.rev_pairs().collect::<Result<Vec<_>, _>>().unwrap(),
-            vec![(2, 9001), (0, 1337)]
+            vec![(3, 9001), (1, 1337)]
         );
 
         assert_eq!(
             access.rev_keys().collect::<Result<Vec<_>, _>>().unwrap(),
-            vec![2, 0]
+            vec![3, 1]
         );
 
         assert_eq!(
@@ -586,26 +600,26 @@ mod tests {
         access.push(&9001).unwrap();
         access.push(&1).unwrap();
         access.push(&2).unwrap();
-        access.remove(2).unwrap();
+        access.remove(3).unwrap();
 
         // start and end set
         assert_eq!(
             access
-                .bounded_pairs(Some(1), Some(4))
+                .bounded_pairs(Some(2), Some(5))
                 .collect::<Result<Vec<_>, _>>()
                 .unwrap(),
-            vec![(1, 42), (3, 1)]
+            vec![(2, 42), (4, 1)]
         );
         assert_eq!(
             access
-                .bounded_keys(Some(1), Some(4))
+                .bounded_keys(Some(2), Some(5))
                 .collect::<Result<Vec<_>, _>>()
                 .unwrap(),
-            vec![1, 3]
+            vec![2, 4]
         );
         assert_eq!(
             access
-                .bounded_values(Some(1), Some(4))
+                .bounded_values(Some(2), Some(5))
                 .collect::<Result<Vec<_>, _>>()
                 .unwrap(),
             vec![42, 1]
@@ -614,21 +628,21 @@ mod tests {
         // end unset
         assert_eq!(
             access
-                .bounded_pairs(Some(1), None)
+                .bounded_pairs(Some(2), None)
                 .collect::<Result<Vec<_>, _>>()
                 .unwrap(),
-            vec![(1, 42), (3, 1), (4, 2)]
+            vec![(2, 42), (4, 1), (5, 2)]
         );
         assert_eq!(
             access
-                .bounded_keys(Some(1), None)
+                .bounded_keys(Some(2), None)
                 .collect::<Result<Vec<_>, _>>()
                 .unwrap(),
-            vec![1, 3, 4]
+            vec![2, 4, 5]
         );
         assert_eq!(
             access
-                .bounded_values(Some(1), None)
+                .bounded_values(Some(2), None)
                 .collect::<Result<Vec<_>, _>>()
                 .unwrap(),
             vec![42, 1, 2]
@@ -637,21 +651,21 @@ mod tests {
         // start unset
         assert_eq!(
             access
-                .bounded_pairs(None, Some(4))
+                .bounded_pairs(None, Some(5))
                 .collect::<Result<Vec<_>, _>>()
                 .unwrap(),
-            vec![(0, 1337), (1, 42), (3, 1)]
+            vec![(1, 1337), (2, 42), (4, 1)]
         );
         assert_eq!(
             access
-                .bounded_keys(None, Some(4))
+                .bounded_keys(None, Some(5))
                 .collect::<Result<Vec<_>, _>>()
                 .unwrap(),
-            vec![0, 1, 3]
+            vec![1, 2, 4]
         );
         assert_eq!(
             access
-                .bounded_values(None, Some(4))
+                .bounded_values(None, Some(5))
                 .collect::<Result<Vec<_>, _>>()
                 .unwrap(),
             vec![1337, 42, 1]
@@ -670,26 +684,26 @@ mod tests {
         access.push(&9001).unwrap();
         access.push(&1).unwrap();
         access.push(&2).unwrap();
-        access.remove(2).unwrap();
+        access.remove(3).unwrap();
 
         // start and end set
         assert_eq!(
             access
-                .bounded_rev_pairs(Some(1), Some(4))
+                .bounded_rev_pairs(Some(2), Some(5))
                 .collect::<Result<Vec<_>, _>>()
                 .unwrap(),
-            vec![(3, 1), (1, 42)]
+            vec![(4, 1), (2, 42)]
         );
         assert_eq!(
             access
-                .bounded_rev_keys(Some(1), Some(4))
+                .bounded_rev_keys(Some(2), Some(5))
                 .collect::<Result<Vec<_>, _>>()
                 .unwrap(),
-            vec![3, 1]
+            vec![4, 2]
         );
         assert_eq!(
             access
-                .bounded_rev_values(Some(1), Some(4))
+                .bounded_rev_values(Some(2), Some(5))
                 .collect::<Result<Vec<_>, _>>()
                 .unwrap(),
             vec![1, 42]
@@ -698,10 +712,10 @@ mod tests {
         // end unset
         assert_eq!(
             access
-                .bounded_rev_pairs(Some(1), None)
+                .bounded_rev_pairs(Some(2), None)
                 .collect::<Result<Vec<_>, _>>()
                 .unwrap(),
-            vec![(4, 2), (3, 1), (1, 42)]
+            vec![(5, 2), (4, 1), (2, 42)]
         );
     }
 }
