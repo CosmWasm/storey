@@ -319,18 +319,23 @@ where
 {
     /// Append a new value to the end of the column.
     ///
+    /// Returns the key of the newly inserted value. If the column is empty, the first
+    /// key will be `1`.
+    ///
     /// # Example
     /// ```
     /// # use mocks::encoding::TestEncoding;
     /// # use mocks::backend::TestStorage;
     /// use storey::containers::Column;
     ///
+    /// const COLUMN_KEY: u8 = 0;
+    ///
     /// let mut storage = TestStorage::new();
-    /// let column = Column::<u64, TestEncoding>::new(0);
+    /// let column = Column::<u64, TestEncoding>::new(COLUMN_KEY);
     /// let mut access = column.access(&mut storage);
     ///
-    /// access.push(&1337).unwrap();
-    /// access.push(&42).unwrap();
+    /// assert_eq!(access.push(&1337).unwrap(), 1);
+    /// assert_eq!(access.push(&42).unwrap(), 2);
     /// ```
     pub fn push(&mut self, value: &T) -> Result<u32, PushError<E::EncodeError>> {
         let bytes = value.encode()?;
