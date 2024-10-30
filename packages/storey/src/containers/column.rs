@@ -10,11 +10,17 @@ use crate::storage::{Storage, StorageMut};
 use super::common::TryGetError;
 use super::{BoundFor, BoundedIterableAccessor, IterableAccessor, NonTerminal, Storable};
 
-/// The last index that has been pushed to the column.
-/// This does not have to be the index of the last element as it is
-/// not reset in case the last element is removed.
-const META_LAST_IX: &[u8] = &[0];
-const META_LEN: &[u8] = &[1];
+/// The first (lowest) index that is pushed to the column.
+const FIRST_INDEX: u32 = 1;
+
+/// Storage keys for metadata.
+mod meta_keys {
+    /// The last index that has been pushed to the column.
+    /// This does not have to be the index of the last element as it is
+    /// not reset in case the last element is removed.
+    pub const META_LAST_IX: &[u8] = &[0];
+    pub const META_LEN: &[u8] = &[1];
+}
 
 /// A collection of rows indexed by `u32` keys. This is somewhat similar to a traditional
 /// database table with an auto-incrementing primary key.
@@ -257,7 +263,7 @@ where
         // TODO: bounds check + error handlinge
 
         self.storage
-            .get_meta(META_LEN)
+            .get_meta(meta_keys::META_LEN)
             .map(|bytes| {
                 if bytes.len() != 4 {
                     Err(LenError::InconsistentState)
@@ -331,22 +337,24 @@ where
 
         let ix = match self
             .storage
-            .get_meta(META_LAST_IX)
+            .get_meta(meta_keys::META_LAST_IX)
             .map(|bytes| u32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]))
         {
             Some(last_ix) => last_ix.checked_add(1).ok_or(PushError::IndexOverflow)?,
-            None => 1,
+            None => FIRST_INDEX,
         };
 
         self.storage.set(&encode_ix(ix), &bytes);
 
-        self.storage.set_meta(META_LAST_IX, &(ix).to_be_bytes());
+        self.storage
+            .set_meta(meta_keys::META_LAST_IX, &(ix).to_be_bytes());
         let len = self
             .storage
-            .get_meta(META_LEN)
+            .get_meta(meta_keys::META_LEN)
             .map(|bytes| u32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]))
             .unwrap_or(0);
-        self.storage.set_meta(META_LEN, &(len + 1).to_be_bytes());
+        self.storage
+            .set_meta(meta_keys::META_LEN, &(len + 1).to_be_bytes());
 
         Ok(ix)
     }
@@ -406,10 +414,11 @@ where
 
         let len = self
             .storage
-            .get_meta(META_LEN)
+            .get_meta(meta_keys::META_LEN)
             .map(|bytes| u32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]))
             .ok_or(RemoveError::InconsistentState)?;
-        self.storage.set_meta(META_LEN, &(len - 1).to_be_bytes());
+        self.storage
+            .set_meta(meta_keys::META_LEN, &(len - 1).to_be_bytes());
 
         Ok(())
     }
