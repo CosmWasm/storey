@@ -1,3 +1,5 @@
+use std::ops::Bound;
+
 use crate::storage::{IterableStorage, RevIterableStorage, Storage, StorageMut};
 
 /// A type representing a storage namespace created by applying a prefix to all keys.
@@ -76,7 +78,7 @@ impl<S: IterableStorage> IterableStorage for StorageBranch<&S> {
     type ValuesIterator<'a> = S::ValuesIterator<'a> where Self: 'a;
     type PairsIterator<'a> = BranchKVIter<S::PairsIterator<'a>> where Self: 'a;
 
-    fn keys<'a>(&'a self, start: Option<&[u8]>, end: Option<&[u8]>) -> Self::KeysIterator<'a> {
+    fn keys<'a>(&'a self, start: Bound<&[u8]>, end: Bound<&[u8]>) -> Self::KeysIterator<'a> {
         let (start, end) = sub_bounds(&self.prefix, start, end);
 
         BranchKeysIter {
@@ -88,7 +90,7 @@ impl<S: IterableStorage> IterableStorage for StorageBranch<&S> {
         }
     }
 
-    fn values<'a>(&'a self, start: Option<&[u8]>, end: Option<&[u8]>) -> Self::ValuesIterator<'a> {
+    fn values<'a>(&'a self, start: Bound<&[u8]>, end: Bound<&[u8]>) -> Self::ValuesIterator<'a> {
         let (start, end) = sub_bounds(&self.prefix, start, end);
 
         self.backend.values(
@@ -97,7 +99,7 @@ impl<S: IterableStorage> IterableStorage for StorageBranch<&S> {
         )
     }
 
-    fn pairs<'a>(&'a self, start: Option<&[u8]>, end: Option<&[u8]>) -> Self::PairsIterator<'a> {
+    fn pairs<'a>(&'a self, start: Bound<&[u8]>, end: Bound<&[u8]>) -> Self::PairsIterator<'a> {
         let (start, end) = sub_bounds(&self.prefix, start, end);
 
         BranchKVIter {
@@ -115,7 +117,7 @@ impl<S: IterableStorage> IterableStorage for StorageBranch<&mut S> {
     type ValuesIterator<'a> = S::ValuesIterator<'a> where Self: 'a;
     type PairsIterator<'a> = BranchKVIter<S::PairsIterator<'a>> where Self: 'a;
 
-    fn keys<'a>(&'a self, start: Option<&[u8]>, end: Option<&[u8]>) -> Self::KeysIterator<'a> {
+    fn keys<'a>(&'a self, start: Bound<&[u8]>, end: Bound<&[u8]>) -> Self::KeysIterator<'a> {
         let (start, end) = sub_bounds(&self.prefix, start, end);
 
         BranchKeysIter {
@@ -127,7 +129,7 @@ impl<S: IterableStorage> IterableStorage for StorageBranch<&mut S> {
         }
     }
 
-    fn values<'a>(&'a self, start: Option<&[u8]>, end: Option<&[u8]>) -> Self::ValuesIterator<'a> {
+    fn values<'a>(&'a self, start: Bound<&[u8]>, end: Bound<&[u8]>) -> Self::ValuesIterator<'a> {
         let (start, end) = sub_bounds(&self.prefix, start, end);
 
         self.backend.values(
@@ -136,7 +138,7 @@ impl<S: IterableStorage> IterableStorage for StorageBranch<&mut S> {
         )
     }
 
-    fn pairs<'a>(&'a self, start: Option<&[u8]>, end: Option<&[u8]>) -> Self::PairsIterator<'a> {
+    fn pairs<'a>(&'a self, start: Bound<&[u8]>, end: Bound<&[u8]>) -> Self::PairsIterator<'a> {
         let (start, end) = sub_bounds(&self.prefix, start, end);
 
         BranchKVIter {
@@ -154,11 +156,7 @@ impl<S: RevIterableStorage> RevIterableStorage for StorageBranch<&S> {
     type RevValuesIterator<'a> = S::RevValuesIterator<'a> where Self: 'a;
     type RevPairsIterator<'a> = BranchKVIter<S::RevPairsIterator<'a>> where Self: 'a;
 
-    fn rev_keys<'a>(
-        &'a self,
-        start: Option<&[u8]>,
-        end: Option<&[u8]>,
-    ) -> Self::RevKeysIterator<'a> {
+    fn rev_keys<'a>(&'a self, start: Bound<&[u8]>, end: Bound<&[u8]>) -> Self::RevKeysIterator<'a> {
         let (start, end) = sub_bounds(&self.prefix, start, end);
 
         BranchKeysIter {
@@ -172,8 +170,8 @@ impl<S: RevIterableStorage> RevIterableStorage for StorageBranch<&S> {
 
     fn rev_values<'a>(
         &'a self,
-        start: Option<&[u8]>,
-        end: Option<&[u8]>,
+        start: Bound<&[u8]>,
+        end: Bound<&[u8]>,
     ) -> Self::RevValuesIterator<'a> {
         let (start, end) = sub_bounds(&self.prefix, start, end);
 
@@ -185,8 +183,8 @@ impl<S: RevIterableStorage> RevIterableStorage for StorageBranch<&S> {
 
     fn rev_pairs<'a>(
         &'a self,
-        start: Option<&[u8]>,
-        end: Option<&[u8]>,
+        start: Bound<&[u8]>,
+        end: Bound<&[u8]>,
     ) -> Self::RevPairsIterator<'a> {
         let (start, end) = sub_bounds(&self.prefix, start, end);
 
@@ -205,11 +203,7 @@ impl<S: RevIterableStorage> RevIterableStorage for StorageBranch<&mut S> {
     type RevValuesIterator<'a> = S::RevValuesIterator<'a> where Self: 'a;
     type RevPairsIterator<'a> = BranchKVIter<S::RevPairsIterator<'a>> where Self: 'a;
 
-    fn rev_keys<'a>(
-        &'a self,
-        start: Option<&[u8]>,
-        end: Option<&[u8]>,
-    ) -> Self::RevKeysIterator<'a> {
+    fn rev_keys<'a>(&'a self, start: Bound<&[u8]>, end: Bound<&[u8]>) -> Self::RevKeysIterator<'a> {
         let (start, end) = sub_bounds(&self.prefix, start, end);
 
         BranchKeysIter {
@@ -223,8 +217,8 @@ impl<S: RevIterableStorage> RevIterableStorage for StorageBranch<&mut S> {
 
     fn rev_values<'a>(
         &'a self,
-        start: Option<&[u8]>,
-        end: Option<&[u8]>,
+        start: Bound<&[u8]>,
+        end: Bound<&[u8]>,
     ) -> Self::RevValuesIterator<'a> {
         let (start, end) = sub_bounds(&self.prefix, start, end);
 
@@ -236,8 +230,8 @@ impl<S: RevIterableStorage> RevIterableStorage for StorageBranch<&mut S> {
 
     fn rev_pairs<'a>(
         &'a self,
-        start: Option<&[u8]>,
-        end: Option<&[u8]>,
+        start: Bound<&[u8]>,
+        end: Bound<&[u8]>,
     ) -> Self::RevPairsIterator<'a> {
         let (start, end) = sub_bounds(&self.prefix, start, end);
 
@@ -253,25 +247,31 @@ impl<S: RevIterableStorage> RevIterableStorage for StorageBranch<&mut S> {
 
 fn sub_bounds(
     prefix: &[u8],
-    start: Option<&[u8]>,
-    end: Option<&[u8]>,
-) -> (Option<Vec<u8>>, Option<Vec<u8>>) {
+    start: Bound<&[u8]>,
+    end: Bound<&[u8]>,
+) -> (Bound<Vec<u8>>, Bound<Vec<u8>>) {
     if prefix.is_empty() {
         (start.map(|s| s.to_vec()), end.map(|s| s.to_vec()))
     } else {
         (
-            Some(
-                start
-                    .map(|s| [prefix, s].concat())
-                    .unwrap_or(prefix.to_vec()),
-            ),
-            Some(end.map(|e| [prefix, e].concat()).unwrap_or_else(|| {
-                let mut pref = prefix.to_vec();
-                if let Some(x) = pref.last_mut() {
-                    *x += 1;
-                }
-                pref
-            })),
+            // concat prefix and start if bounded
+            // return just the prefix if unbounded
+            if let Bound::Unbounded = start {
+                Bound::Included(prefix.to_vec())
+            } else {
+                start.map(|s| [prefix, s].concat())
+            },
+            if let Bound::Unbounded = end {
+                Bound::Excluded({
+                    let mut pref = prefix.to_vec();
+                    if let Some(x) = pref.last_mut() {
+                        *x += 1;
+                    }
+                    pref
+                })
+            } else {
+                end.map(|e| [prefix, e].concat())
+            },
         )
     }
 }
@@ -337,43 +337,61 @@ mod tests {
     #[test]
     fn sub_bounds_no_prefix() {
         assert_eq!(
-            sub_bounds(&[], Some(b"foo"), Some(b"bar")),
-            (Some(b"foo".to_vec()), Some(b"bar".to_vec()))
+            sub_bounds(&[], Bound::Included(b"foo"), Bound::Excluded(b"bar")),
+            (
+                Bound::Included(b"foo".to_vec()),
+                Bound::Excluded(b"bar".to_vec())
+            )
         );
 
         assert_eq!(
-            sub_bounds(&[], Some(b"foo"), None),
-            (Some(b"foo".to_vec()), None)
+            sub_bounds(&[], Bound::Included(b"foo"), Bound::Unbounded),
+            (Bound::Included(b"foo".to_vec()), Bound::Unbounded)
         );
 
         assert_eq!(
-            sub_bounds(&[], None, Some(b"bar")),
-            (None, Some(b"bar".to_vec()))
+            sub_bounds(&[], Bound::Unbounded, Bound::Excluded(b"bar")),
+            (Bound::Unbounded, Bound::Excluded(b"bar".to_vec()))
         );
 
-        assert_eq!(sub_bounds(&[], None, None), (None, None));
+        assert_eq!(
+            sub_bounds(&[], Bound::Unbounded, Bound::Unbounded),
+            (Bound::Unbounded, Bound::Unbounded)
+        );
     }
 
     #[test]
     fn sub_bounds_with_prefix() {
         assert_eq!(
-            sub_bounds(b"foo", Some(b"bar"), Some(b"baz")),
-            (Some(b"foobar".to_vec()), Some(b"foobaz".to_vec()))
+            sub_bounds(b"foo", Bound::Included(b"bar"), Bound::Excluded(b"baz")),
+            (
+                Bound::Included(b"foobar".to_vec()),
+                Bound::Excluded(b"foobaz".to_vec())
+            )
         );
 
         assert_eq!(
-            sub_bounds(b"foo", Some(b"bar"), None),
-            (Some(b"foobar".to_vec()), Some(b"fop".to_vec()))
+            sub_bounds(b"foo", Bound::Included(b"bar"), Bound::Unbounded),
+            (
+                Bound::Included(b"foobar".to_vec()),
+                Bound::Excluded(b"fop".to_vec())
+            )
         );
 
         assert_eq!(
-            sub_bounds(b"foo", None, Some(b"baz")),
-            (Some(b"foo".to_vec()), Some(b"foobaz".to_vec()))
+            sub_bounds(b"foo", Bound::Unbounded, Bound::Excluded(b"baz")),
+            (
+                Bound::Included(b"foo".to_vec()),
+                Bound::Excluded(b"foobaz".to_vec())
+            )
         );
 
         assert_eq!(
-            sub_bounds(b"foo", None, None),
-            (Some(b"foo".to_vec()), Some(b"fop".to_vec()))
+            sub_bounds(b"foo", Bound::Unbounded, Bound::Unbounded),
+            (
+                Bound::Included(b"foo".to_vec()),
+                Bound::Excluded(b"fop".to_vec())
+            )
         );
     }
 
@@ -385,7 +403,7 @@ mod tests {
         branch.set(b"bar", b"baz");
         branch.set(b"qux", b"quux");
 
-        let mut iter = branch.pairs(None, None);
+        let mut iter = branch.pairs(Bound::Unbounded, Bound::Unbounded);
         assert_eq!(iter.next(), Some((b"bar".to_vec(), b"baz".to_vec())));
         assert_eq!(iter.next(), Some((b"qux".to_vec(), b"quux".to_vec())));
         assert_eq!(iter.next(), None);
@@ -399,7 +417,7 @@ mod tests {
         branch.set(b"bar", b"baz");
         branch.set(b"qux", b"quux");
 
-        let mut iter = branch.keys(None, None);
+        let mut iter = branch.keys(Bound::Unbounded, Bound::Unbounded);
         assert_eq!(iter.next(), Some(b"bar".to_vec()));
         assert_eq!(iter.next(), Some(b"qux".to_vec()));
         assert_eq!(iter.next(), None);
@@ -413,7 +431,7 @@ mod tests {
         branch.set(b"bar", b"baz");
         branch.set(b"qux", b"quux");
 
-        let mut iter = branch.values(None, None);
+        let mut iter = branch.values(Bound::Unbounded, Bound::Unbounded);
         assert_eq!(iter.next(), Some(b"baz".to_vec()));
         assert_eq!(iter.next(), Some(b"quux".to_vec()));
         assert_eq!(iter.next(), None);

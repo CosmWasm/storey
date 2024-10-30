@@ -1,3 +1,5 @@
+use std::ops::Bound;
+
 /// A read interface for binary key-value storage.
 pub trait Storage {
     /// Get the value of the key.
@@ -60,7 +62,7 @@ pub trait IterableStorage {
     /// If both `start` and `end` are `None`, the iterator should iterate over all keys.
     ///
     /// The range is inclusive for `start` and exclusive for `end`.
-    fn keys<'a>(&'a self, start: Option<&[u8]>, end: Option<&[u8]>) -> Self::KeysIterator<'a>;
+    fn keys<'a>(&'a self, start: Bound<&[u8]>, end: Bound<&[u8]>) -> Self::KeysIterator<'a>;
 
     /// Get an iterator over values.
     ///
@@ -71,7 +73,7 @@ pub trait IterableStorage {
     /// If both `start` and `end` are `None`, the iterator should iterate over all keys.
     ///
     /// The range is inclusive for `start` and exclusive for `end`.
-    fn values<'a>(&'a self, start: Option<&[u8]>, end: Option<&[u8]>) -> Self::ValuesIterator<'a>;
+    fn values<'a>(&'a self, start: Bound<&[u8]>, end: Bound<&[u8]>) -> Self::ValuesIterator<'a>;
 
     /// Get an iterator over key-value pairs.
     ///
@@ -82,7 +84,7 @@ pub trait IterableStorage {
     /// If both `start` and `end` are `None`, the iterator should iterate over all keys.
     ///
     /// The range is inclusive for `start` and exclusive for `end`.
-    fn pairs<'a>(&'a self, start: Option<&[u8]>, end: Option<&[u8]>) -> Self::PairsIterator<'a>;
+    fn pairs<'a>(&'a self, start: Bound<&[u8]>, end: Bound<&[u8]>) -> Self::PairsIterator<'a>;
 }
 
 impl<T: IterableStorage> IterableStorage for &T {
@@ -99,7 +101,7 @@ impl<T: IterableStorage> IterableStorage for &T {
     /// If both `start` and `end` are `None`, the iterator should iterate over all keys.
     ///
     /// The range is inclusive for `start` and exclusive for `end`.
-    fn keys<'a>(&'a self, start: Option<&[u8]>, end: Option<&[u8]>) -> Self::KeysIterator<'a> {
+    fn keys<'a>(&'a self, start: Bound<&[u8]>, end: Bound<&[u8]>) -> Self::KeysIterator<'a> {
         (**self).keys(start, end)
     }
 
@@ -112,7 +114,7 @@ impl<T: IterableStorage> IterableStorage for &T {
     /// If both `start` and `end` are `None`, the iterator should iterate over all keys.
     ///
     /// The range is inclusive for `start` and exclusive for `end`.
-    fn values<'a>(&'a self, start: Option<&[u8]>, end: Option<&[u8]>) -> Self::ValuesIterator<'a> {
+    fn values<'a>(&'a self, start: Bound<&[u8]>, end: Bound<&[u8]>) -> Self::ValuesIterator<'a> {
         (**self).values(start, end)
     }
 
@@ -125,7 +127,7 @@ impl<T: IterableStorage> IterableStorage for &T {
     /// If both `start` and `end` are `None`, the iterator should iterate over all keys.
     ///
     /// The range is inclusive for `start` and exclusive for `end`.
-    fn pairs<'a>(&'a self, start: Option<&[u8]>, end: Option<&[u8]>) -> Self::PairsIterator<'a> {
+    fn pairs<'a>(&'a self, start: Bound<&[u8]>, end: Bound<&[u8]>) -> Self::PairsIterator<'a> {
         (**self).pairs(start, end)
     }
 }
@@ -135,15 +137,15 @@ impl<T: IterableStorage> IterableStorage for &mut T {
     type ValuesIterator<'a> = T::ValuesIterator<'a> where Self: 'a;
     type PairsIterator<'a> = T::PairsIterator<'a> where Self: 'a;
 
-    fn keys<'a>(&'a self, start: Option<&[u8]>, end: Option<&[u8]>) -> Self::KeysIterator<'a> {
+    fn keys<'a>(&'a self, start: Bound<&[u8]>, end: Bound<&[u8]>) -> Self::KeysIterator<'a> {
         (**self).keys(start, end)
     }
 
-    fn values<'a>(&'a self, start: Option<&[u8]>, end: Option<&[u8]>) -> Self::ValuesIterator<'a> {
+    fn values<'a>(&'a self, start: Bound<&[u8]>, end: Bound<&[u8]>) -> Self::ValuesIterator<'a> {
         (**self).values(start, end)
     }
 
-    fn pairs<'a>(&'a self, start: Option<&[u8]>, end: Option<&[u8]>) -> Self::PairsIterator<'a> {
+    fn pairs<'a>(&'a self, start: Bound<&[u8]>, end: Bound<&[u8]>) -> Self::PairsIterator<'a> {
         (**self).pairs(start, end)
     }
 }
@@ -167,19 +169,15 @@ pub trait RevIterableStorage {
     where
         Self: 'a;
 
-    fn rev_keys<'a>(
-        &'a self,
-        start: Option<&[u8]>,
-        end: Option<&[u8]>,
-    ) -> Self::RevKeysIterator<'a>;
+    fn rev_keys<'a>(&'a self, start: Bound<&[u8]>, end: Bound<&[u8]>) -> Self::RevKeysIterator<'a>;
     fn rev_values<'a>(
         &'a self,
-        start: Option<&[u8]>,
-        end: Option<&[u8]>,
+        start: Bound<&[u8]>,
+        end: Bound<&[u8]>,
     ) -> Self::RevValuesIterator<'a>;
     fn rev_pairs<'a>(
         &'a self,
-        start: Option<&[u8]>,
-        end: Option<&[u8]>,
+        start: Bound<&[u8]>,
+        end: Bound<&[u8]>,
     ) -> Self::RevPairsIterator<'a>;
 }

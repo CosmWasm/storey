@@ -346,6 +346,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use std::ops::Bound;
+
     use super::*;
 
     use crate::containers::Item;
@@ -388,7 +390,7 @@ mod tests {
         access.entry_mut("baz").set(&69).unwrap();
 
         let items = access
-            .bounded_pairs(Some("bar"), Some("bazz"))
+            .bounded_pairs(Bound::Included("bar"), Bound::Excluded("bazz"))
             .collect::<Result<Vec<_>, _>>()
             .unwrap();
         assert_eq!(
@@ -431,7 +433,7 @@ mod tests {
         access.entry_mut(&4).entry_mut("quux").set(&69).unwrap();
 
         let items = access
-            .bounded_pairs(Some(&2), Some(&4))
+            .bounded_pairs(Bound::Included(&2), Bound::Excluded(&4))
             .collect::<Result<Vec<_>, _>>()
             .unwrap();
 
