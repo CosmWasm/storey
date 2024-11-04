@@ -604,6 +604,22 @@ mod tests {
         access.push(&2).unwrap();
         access.remove(3).unwrap();
 
+        assert_eq!(
+            access
+                .bounded_pairs(Bound::Excluded(2), Bound::Included(5))
+                .collect::<Result<Vec<_>, _>>()
+                .unwrap(),
+            vec![(4, 1), (5, 2)]
+        );
+
+        assert_eq!(
+            access
+                .bounded_pairs(Bound::Excluded(1), Bound::Included(5))
+                .collect::<Result<Vec<_>, _>>()
+                .unwrap(),
+            vec![(2, 42), (4, 1), (5, 2)]
+        );
+
         // start and end set
         assert_eq!(
             access
@@ -681,11 +697,11 @@ mod tests {
         let column = Column::<u64, TestEncoding>::new(0);
         let mut access = column.access(&mut storage);
 
-        access.push(&1337).unwrap();
-        access.push(&42).unwrap();
-        access.push(&9001).unwrap();
-        access.push(&1).unwrap();
-        access.push(&2).unwrap();
+        access.push(&1337).unwrap(); //1
+        access.push(&42).unwrap(); //2
+        access.push(&9001).unwrap(); //3 (removed)
+        access.push(&1).unwrap(); //4
+        access.push(&2).unwrap(); //5
         access.remove(3).unwrap();
 
         // start and end set
@@ -695,6 +711,13 @@ mod tests {
                 .collect::<Result<Vec<_>, _>>()
                 .unwrap(),
             vec![(4, 1), (2, 42)]
+        );
+        assert_eq!(
+            access
+                .bounded_rev_keys(Bound::Excluded(2), Bound::Excluded(5))
+                .collect::<Result<Vec<_>, _>>()
+                .unwrap(),
+            vec![4]
         );
         assert_eq!(
             access

@@ -397,6 +397,18 @@ mod tests {
             items,
             vec![(("bar".to_string(), ()), 42), (("baz".to_string(), ()), 69)]
         );
+
+        let items = access
+            .bounded_pairs(Bound::Excluded("bar"), Bound::Included("foo"))
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+        assert_eq!(
+            items,
+            vec![
+                (("baz".to_string(), ()), 69),
+                (("foo".to_string(), ()), 1337)
+            ]
+        );
     }
 
     #[test]

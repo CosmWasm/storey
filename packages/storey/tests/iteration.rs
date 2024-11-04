@@ -1,4 +1,6 @@
-use storey::containers::{Item, IterableAccessor as _, Map};
+use std::ops::Bound;
+
+use storey::containers::{BoundedIterableAccessor, Item, IterableAccessor as _, Map};
 
 use mocks::backend::TestStorage;
 use mocks::encoding::TestEncoding;
@@ -41,6 +43,80 @@ fn map_of_map_iteration() {
         vec![
             (("bar".to_string(), ()), 1337),
             (("baz".to_string(), ()), 42)
+        ]
+    );
+}
+
+#[test]
+fn map_of_map_bounded_iteration() {
+    let mut storage = TestStorage::new();
+
+    let map = Map::<String, Map<String, Item<u64, TestEncoding>>>::new(0);
+    let mut access = map.access(&mut storage);
+
+    // populate with data
+    access.entry_mut("foo").entry_mut("bar").set(&1337).unwrap();
+    access.entry_mut("foo").entry_mut("baz").set(&42).unwrap();
+    access.entry_mut("foo").entry_mut("qux").set(&9001).unwrap();
+    access
+        .entry_mut("qux")
+        .entry_mut("quux")
+        .set(&9001)
+        .unwrap();
+
+    // iterate over items under "foo"
+    let items = access
+        .entry("foo")
+        .bounded_pairs(Bound::Unbounded, Bound::Excluded("qux"))
+        .collect::<Result<Vec<_>, _>>()
+        .unwrap();
+    assert_eq!(
+        items,
+        vec![
+            (("bar".to_string(), ()), 1337),
+            (("baz".to_string(), ()), 42),
+        ]
+    );
+
+    // iterate over items under "foo"
+    let items = access
+        .entry("foo")
+        .bounded_pairs(Bound::Unbounded, Bound::Included("qux"))
+        .collect::<Result<Vec<_>, _>>()
+        .unwrap();
+    assert_eq!(
+        items,
+        vec![
+            (("bar".to_string(), ()), 1337),
+            (("baz".to_string(), ()), 42),
+            (("qux".to_string(), ()), 9001),
+        ]
+    );
+
+    let items = access
+        .entry("foo")
+        .bounded_pairs(Bound::Excluded("bar"), Bound::Unbounded)
+        .collect::<Result<Vec<_>, _>>()
+        .unwrap();
+    assert_eq!(
+        items,
+        vec![
+            (("baz".to_string(), ()), 42),
+            (("qux".to_string(), ()), 9001),
+        ]
+    );
+
+    let items = access
+        .entry("foo")
+        .bounded_pairs(Bound::Included("bar"), Bound::Unbounded)
+        .collect::<Result<Vec<_>, _>>()
+        .unwrap();
+    assert_eq!(
+        items,
+        vec![
+            (("bar".to_string(), ()), 1337),
+            (("baz".to_string(), ()), 42),
+            (("qux".to_string(), ()), 9001),
         ]
     );
 }
