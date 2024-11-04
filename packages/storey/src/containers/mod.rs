@@ -181,6 +181,8 @@ where
 /// in turn means the entries found between two string keys may not be the expected ones.
 pub trait BoundedIterableAccessor: IterableAccessor {
     /// Iterate over key-value pairs in this collection, respecting the given bounds.
+    ///
+    /// Either end of the range can be unbounded, inclusive, or exclusive. See [`Bound`] for more.
     fn bounded_pairs<B>(
         &self,
         start: Bound<B>,
@@ -202,6 +204,8 @@ pub trait BoundedIterableAccessor: IterableAccessor {
     }
 
     /// Iterate over keys in this collection, respecting the given bounds.
+    ///
+    /// Either end of the range can be unbounded, inclusive, or exclusive. See [`Bound`] for more.
     fn bounded_keys<B>(
         &self,
         start: Bound<B>,
@@ -223,6 +227,8 @@ pub trait BoundedIterableAccessor: IterableAccessor {
     }
 
     /// Iterate over values in this collection, respecting the given bounds.
+    ///
+    /// Either end of the range can be unbounded, inclusive, or exclusive. See [`Bound`] for more.
     fn bounded_values<B>(
         &self,
         start: Bound<B>,
@@ -259,6 +265,8 @@ where
     Self::Storage: RevIterableStorage,
 {
     /// Iterate over key-value pairs in this collection in reverse order, respecting the given bounds.
+    ///
+    /// Either end of the range can be unbounded, inclusive, or exclusive. See [`Bound`] for more.
     fn bounded_rev_pairs<B>(
         &self,
         start: Bound<B>,
@@ -280,6 +288,8 @@ where
     }
 
     /// Iterate over keys in this collection in reverse order, respecting the given bounds.
+    ///
+    /// Either end of the range can be unbounded, inclusive, or exclusive. See [`Bound`] for more.
     fn bounded_rev_keys<B>(
         &self,
         start: Bound<B>,
@@ -301,6 +311,8 @@ where
     }
 
     /// Iterate over values in this collection in reverse order, respecting the given bounds.
+    ///
+    /// Either end of the range can be unbounded, inclusive, or exclusive. See [`Bound`] for more.
     fn bounded_rev_values<B>(
         &self,
         start: Bound<B>,

@@ -55,35 +55,29 @@ pub trait IterableStorage {
 
     /// Get an iterator over keys.
     ///
-    /// The iterator should iterate over keys in lexicographical order.
+    /// The iterator walks keys in lexicographical order.
     ///
-    /// If `start` is `None`, the iterator should start from the first key.
-    /// If `end` is `None`, the iterator should iterate until the last key.
-    /// If both `start` and `end` are `None`, the iterator should iterate over all keys.
-    ///
-    /// The range is inclusive for `start` and exclusive for `end`.
+    /// The [`Bound`] type is used to specify either end of the range - whether it should be
+    /// bounded at all, and if so, whether it should be inclusive or exclusive. See the
+    /// [`Bound`] documentation for more details.
     fn keys<'a>(&'a self, start: Bound<&[u8]>, end: Bound<&[u8]>) -> Self::KeysIterator<'a>;
 
     /// Get an iterator over values.
     ///
-    /// The iterator should iterate over values corresponding to keys in lexicographical order.
+    /// The iterator walks values corresponding to keys in lexicographical order.
     ///
-    /// If `start` is `None`, the iterator should start from the first key.
-    /// If `end` is `None`, the iterator should iterate until the last key.
-    /// If both `start` and `end` are `None`, the iterator should iterate over all keys.
-    ///
-    /// The range is inclusive for `start` and exclusive for `end`.
+    /// The [`Bound`] type is used to specify either end of the range - whether it should be
+    /// bounded at all, and if so, whether it should be inclusive or exclusive. See the
+    /// [`Bound`] documentation for more details.
     fn values<'a>(&'a self, start: Bound<&[u8]>, end: Bound<&[u8]>) -> Self::ValuesIterator<'a>;
 
     /// Get an iterator over key-value pairs.
     ///
-    /// The iterator should iterate over key-value pairs in lexicographical order.
+    /// The iterator walks key-value pairs in lexicographical order.
     ///
-    /// If `start` is `None`, the iterator should start from the first key.
-    /// If `end` is `None`, the iterator should iterate until the last key.
-    /// If both `start` and `end` are `None`, the iterator should iterate over all keys.
-    ///
-    /// The range is inclusive for `start` and exclusive for `end`.
+    /// The [`Bound`] type is used to specify either end of the range - whether it should be
+    /// bounded at all, and if so, whether it should be inclusive or exclusive. See the
+    /// [`Bound`] documentation for more details.
     fn pairs<'a>(&'a self, start: Bound<&[u8]>, end: Bound<&[u8]>) -> Self::PairsIterator<'a>;
 }
 
@@ -92,41 +86,14 @@ impl<T: IterableStorage> IterableStorage for &T {
     type ValuesIterator<'a> = T::ValuesIterator<'a> where Self: 'a;
     type PairsIterator<'a> = T::PairsIterator<'a> where Self: 'a;
 
-    /// Get an iterator over keys.
-    ///
-    /// The iterator should iterate over keys in lexicographical order.
-    ///
-    /// If `start` is `None`, the iterator should start from the first key.
-    /// If `end` is `None`, the iterator should iterate until the last key.
-    /// If both `start` and `end` are `None`, the iterator should iterate over all keys.
-    ///
-    /// The range is inclusive for `start` and exclusive for `end`.
     fn keys<'a>(&'a self, start: Bound<&[u8]>, end: Bound<&[u8]>) -> Self::KeysIterator<'a> {
         (**self).keys(start, end)
     }
 
-    /// Get an iterator over values.
-    ///
-    /// The iterator should iterate over values corresponding to keys in lexicographical order.
-    ///
-    /// If `start` is `None`, the iterator should start from the first key.
-    /// If `end` is `None`, the iterator should iterate until the last key.
-    /// If both `start` and `end` are `None`, the iterator should iterate over all keys.
-    ///
-    /// The range is inclusive for `start` and exclusive for `end`.
     fn values<'a>(&'a self, start: Bound<&[u8]>, end: Bound<&[u8]>) -> Self::ValuesIterator<'a> {
         (**self).values(start, end)
     }
 
-    /// Get an iterator over key-value pairs.
-    ///
-    /// The iterator should iterate over key-value pairs in lexicographical order.
-    ///
-    /// If `start` is `None`, the iterator should start from the first key.
-    /// If `end` is `None`, the iterator should iterate until the last key.
-    /// If both `start` and `end` are `None`, the iterator should iterate over all keys.
-    ///
-    /// The range is inclusive for `start` and exclusive for `end`.
     fn pairs<'a>(&'a self, start: Bound<&[u8]>, end: Bound<&[u8]>) -> Self::PairsIterator<'a> {
         (**self).pairs(start, end)
     }
@@ -152,7 +119,7 @@ impl<T: IterableStorage> IterableStorage for &mut T {
 
 /// Iteration interface for binary key-value storage in reverse order.
 ///
-/// The iterator should iterate over key-value pairs in reverse lexicographical order of keys.
+/// The iterator walks key-value pairs in reverse lexicographical order of keys.
 pub trait RevIterableStorage {
     /// The type of the iterator returned by [`rev_keys`](Self::rev_keys).
     type RevKeysIterator<'a>: Iterator<Item = Vec<u8>>
@@ -169,12 +136,35 @@ pub trait RevIterableStorage {
     where
         Self: 'a;
 
+    /// Get a reverse iterator over keys.
+    ///
+    /// The iterator walks keys in reverse lexicographical order.
+    ///
+    /// The [`Bound`] type is used to specify either end of the range - whether it should be
+    /// bounded at all, and if so, whether it should be inclusive or exclusive. See the
+    /// [`Bound`] documentation for more details.
     fn rev_keys<'a>(&'a self, start: Bound<&[u8]>, end: Bound<&[u8]>) -> Self::RevKeysIterator<'a>;
+
+    /// Get a reverse iterator over values.
+    ///
+    /// The iterator walks values corresponding to keys in reverse lexicographical order.
+    ///
+    /// The [`Bound`] type is used to specify either end of the range - whether it should be
+    /// bounded at all, and if so, whether it should be inclusive or exclusive. See the
+    /// [`Bound`] documentation for more details.
     fn rev_values<'a>(
         &'a self,
         start: Bound<&[u8]>,
         end: Bound<&[u8]>,
     ) -> Self::RevValuesIterator<'a>;
+
+    /// Get a reverse iterator over key-value pairs.
+    ///
+    /// The iterator walks key-value pairs in reverse lexicographical order.
+    ///
+    /// The [`Bound`] type is used to specify either end of the range - whether it should be
+    /// bounded at all, and if so, whether it should be inclusive or exclusive. See the
+    /// [`Bound`] documentation for more details.
     fn rev_pairs<'a>(
         &'a self,
         start: Bound<&[u8]>,
