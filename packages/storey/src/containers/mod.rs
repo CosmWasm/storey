@@ -64,11 +64,15 @@ pub trait Storable {
 }
 
 /// A key-value pair decoding error.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, thiserror::Error)]
 pub enum KVDecodeError<K, V> {
+    #[error("failed to decode key: {0}")]
     Key(K),
+    #[error("failed to decode value: {0}")]
     Value(V),
 }
+
+impl<K: std::fmt::Display, V: std::fmt::Display> crate::error::StoreyError for KVDecodeError<K, V> {}
 
 /// A trait for collection accessors (see [`Storable::Accessor`]) that provide iteration over
 /// their contents.

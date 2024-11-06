@@ -5,3 +5,5 @@ pub enum TryGetError<E> {
     #[error(transparent)]
     DecodeError(#[from] E),
 }
+
+impl<T: std::fmt::Display> crate::error::StoreyError for TryGetError<T> {}
