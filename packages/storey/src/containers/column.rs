@@ -669,21 +669,21 @@ mod tests {
         // start unset
         assert_eq!(
             access
-                .bounded_pairs(Bound::Included(1), Bound::Excluded(5))
+                .bounded_pairs(Bound::Unbounded, Bound::Excluded(5))
                 .collect::<Result<Vec<_>, _>>()
                 .unwrap(),
             vec![(1, 1337), (2, 42), (4, 1)]
         );
         assert_eq!(
             access
-                .bounded_keys(Bound::Included(1), Bound::Excluded(5))
+                .bounded_keys(Bound::Unbounded, Bound::Excluded(5))
                 .collect::<Result<Vec<_>, _>>()
                 .unwrap(),
             vec![1, 2, 4]
         );
         assert_eq!(
             access
-                .bounded_values(Bound::Included(1), Bound::Excluded(5))
+                .bounded_values(Bound::Unbounded, Bound::Excluded(5))
                 .collect::<Result<Vec<_>, _>>()
                 .unwrap(),
             vec![1337, 42, 1]
