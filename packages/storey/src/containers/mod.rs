@@ -6,7 +6,7 @@ pub mod common;
 mod item;
 pub mod map;
 
-use std::marker::PhantomData;
+use std::{marker::PhantomData, ops::Bound};
 
 pub use column::{Column, ColumnAccess};
 pub use item::{Item, ItemAccess};
@@ -93,7 +93,7 @@ pub trait IterableAccessor: Sized {
         &self,
     ) -> StorableIter<Self::Storable, <Self::Storage as IterableStorage>::PairsIterator<'_>> {
         StorableIter {
-            inner: self.storage().pairs(None, None),
+            inner: self.storage().pairs(Bound::Unbounded, Bound::Unbounded),
             phantom: PhantomData,
         }
     }
@@ -103,7 +103,7 @@ pub trait IterableAccessor: Sized {
         &self,
     ) -> StorableKeys<Self::Storable, <Self::Storage as IterableStorage>::KeysIterator<'_>> {
         StorableKeys {
-            inner: self.storage().keys(None, None),
+            inner: self.storage().keys(Bound::Unbounded, Bound::Unbounded),
             phantom: PhantomData,
         }
     }
@@ -114,7 +114,7 @@ pub trait IterableAccessor: Sized {
     ) -> StorableValues<Self::Storable, <Self::Storage as IterableStorage>::ValuesIterator<'_>>
     {
         StorableValues {
-            inner: self.storage().values(None, None),
+            inner: self.storage().values(Bound::Unbounded, Bound::Unbounded),
             phantom: PhantomData,
         }
     }
@@ -131,7 +131,7 @@ where
     ) -> StorableIter<Self::Storable, <Self::Storage as RevIterableStorage>::RevPairsIterator<'_>>
     {
         StorableIter {
-            inner: self.storage().rev_pairs(None, None),
+            inner: self.storage().rev_pairs(Bound::Unbounded, Bound::Unbounded),
             phantom: PhantomData,
         }
     }
@@ -142,7 +142,7 @@ where
     ) -> StorableKeys<Self::Storable, <Self::Storage as RevIterableStorage>::RevKeysIterator<'_>>
     {
         StorableKeys {
-            inner: self.storage().rev_keys(None, None),
+            inner: self.storage().rev_keys(Bound::Unbounded, Bound::Unbounded),
             phantom: PhantomData,
         }
     }
@@ -153,7 +153,9 @@ where
     ) -> StorableValues<Self::Storable, <Self::Storage as RevIterableStorage>::RevValuesIterator<'_>>
     {
         StorableValues {
-            inner: self.storage().rev_values(None, None),
+            inner: self
+                .storage()
+                .rev_values(Bound::Unbounded, Bound::Unbounded),
             phantom: PhantomData,
         }
     }
@@ -183,10 +185,12 @@ where
 /// in turn means the entries found between two string keys may not be the expected ones.
 pub trait BoundedIterableAccessor: IterableAccessor {
     /// Iterate over key-value pairs in this collection, respecting the given bounds.
+    ///
+    /// Either end of the range can be unbounded, inclusive, or exclusive. See [`Bound`] for more.
     fn bounded_pairs<B>(
         &self,
-        start: Option<B>,
-        end: Option<B>,
+        start: Bound<B>,
+        end: Bound<B>,
     ) -> StorableIter<Self::Storable, <Self::Storage as IterableStorage>::PairsIterator<'_>>
     where
         B: BoundFor<Self::Storable>,
@@ -195,16 +199,21 @@ pub trait BoundedIterableAccessor: IterableAccessor {
         let end = end.map(|b| b.into_bytes());
 
         StorableIter {
-            inner: self.storage().pairs(start.as_deref(), end.as_deref()),
+            inner: self.storage().pairs(
+                start.as_ref().map(|b| b.as_slice()),
+                end.as_ref().map(|b| b.as_slice()),
+            ),
             phantom: PhantomData,
         }
     }
 
     /// Iterate over keys in this collection, respecting the given bounds.
+    ///
+    /// Either end of the range can be unbounded, inclusive, or exclusive. See [`Bound`] for more.
     fn bounded_keys<B>(
         &self,
-        start: Option<B>,
-        end: Option<B>,
+        start: Bound<B>,
+        end: Bound<B>,
     ) -> StorableKeys<Self::Storable, <Self::Storage as IterableStorage>::KeysIterator<'_>>
     where
         B: BoundFor<Self::Storable>,
@@ -213,16 +222,21 @@ pub trait BoundedIterableAccessor: IterableAccessor {
         let end = end.map(|b| b.into_bytes());
 
         StorableKeys {
-            inner: self.storage().keys(start.as_deref(), end.as_deref()),
+            inner: self.storage().keys(
+                start.as_ref().map(|b| b.as_slice()),
+                end.as_ref().map(|b| b.as_slice()),
+            ),
             phantom: PhantomData,
         }
     }
 
     /// Iterate over values in this collection, respecting the given bounds.
+    ///
+    /// Either end of the range can be unbounded, inclusive, or exclusive. See [`Bound`] for more.
     fn bounded_values<B>(
         &self,
-        start: Option<B>,
-        end: Option<B>,
+        start: Bound<B>,
+        end: Bound<B>,
     ) -> StorableValues<Self::Storable, <Self::Storage as IterableStorage>::ValuesIterator<'_>>
     where
         B: BoundFor<Self::Storable>,
@@ -231,7 +245,10 @@ pub trait BoundedIterableAccessor: IterableAccessor {
         let end = end.map(|b| b.into_bytes());
 
         StorableValues {
-            inner: self.storage().values(start.as_deref(), end.as_deref()),
+            inner: self.storage().values(
+                start.as_ref().map(|b| b.as_slice()),
+                end.as_ref().map(|b| b.as_slice()),
+            ),
             phantom: PhantomData,
         }
     }
@@ -252,10 +269,12 @@ where
     Self::Storage: RevIterableStorage,
 {
     /// Iterate over key-value pairs in this collection in reverse order, respecting the given bounds.
+    ///
+    /// Either end of the range can be unbounded, inclusive, or exclusive. See [`Bound`] for more.
     fn bounded_rev_pairs<B>(
         &self,
-        start: Option<B>,
-        end: Option<B>,
+        start: Bound<B>,
+        end: Bound<B>,
     ) -> StorableIter<Self::Storable, <Self::Storage as RevIterableStorage>::RevPairsIterator<'_>>
     where
         B: BoundFor<Self::Storable>,
@@ -264,16 +283,21 @@ where
         let end = end.map(|b| b.into_bytes());
 
         StorableIter {
-            inner: self.storage().rev_pairs(start.as_deref(), end.as_deref()),
+            inner: self.storage().rev_pairs(
+                start.as_ref().map(|b| b.as_slice()),
+                end.as_ref().map(|b| b.as_slice()),
+            ),
             phantom: PhantomData,
         }
     }
 
     /// Iterate over keys in this collection in reverse order, respecting the given bounds.
+    ///
+    /// Either end of the range can be unbounded, inclusive, or exclusive. See [`Bound`] for more.
     fn bounded_rev_keys<B>(
         &self,
-        start: Option<B>,
-        end: Option<B>,
+        start: Bound<B>,
+        end: Bound<B>,
     ) -> StorableKeys<Self::Storable, <Self::Storage as RevIterableStorage>::RevKeysIterator<'_>>
     where
         B: BoundFor<Self::Storable>,
@@ -282,16 +306,21 @@ where
         let end = end.map(|b| b.into_bytes());
 
         StorableKeys {
-            inner: self.storage().rev_keys(start.as_deref(), end.as_deref()),
+            inner: self.storage().rev_keys(
+                start.as_ref().map(|b| b.as_slice()),
+                end.as_ref().map(|b| b.as_slice()),
+            ),
             phantom: PhantomData,
         }
     }
 
     /// Iterate over values in this collection in reverse order, respecting the given bounds.
+    ///
+    /// Either end of the range can be unbounded, inclusive, or exclusive. See [`Bound`] for more.
     fn bounded_rev_values<B>(
         &self,
-        start: Option<B>,
-        end: Option<B>,
+        start: Bound<B>,
+        end: Bound<B>,
     ) -> StorableValues<Self::Storable, <Self::Storage as RevIterableStorage>::RevValuesIterator<'_>>
     where
         B: BoundFor<Self::Storable>,
@@ -300,7 +329,10 @@ where
         let end = end.map(|b| b.into_bytes());
 
         StorableValues {
-            inner: self.storage().rev_values(start.as_deref(), end.as_deref()),
+            inner: self.storage().rev_values(
+                start.as_ref().map(|b| b.as_slice()),
+                end.as_ref().map(|b| b.as_slice()),
+            ),
             phantom: PhantomData,
         }
     }
