@@ -179,6 +179,8 @@ pub enum MapKeyDecodeError<I: std::fmt::Display> {
     Inner(I),
 }
 
+impl<I: std::fmt::Display> crate::error::StoreyError for MapKeyDecodeError<I> {}
+
 /// An accessor for a map.
 ///
 /// The accessor provides methods for interacting with the map in storage.

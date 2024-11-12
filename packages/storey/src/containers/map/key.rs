@@ -47,6 +47,8 @@ impl Key for str {
 #[error("invalid UTF8")]
 pub struct InvalidUtf8;
 
+impl crate::error::StoreyError for InvalidUtf8 {}
+
 impl OwnedKey for String {
     type Error = InvalidUtf8;
 
@@ -128,9 +130,13 @@ impl OwnedKey for Box<[u8]> {
 }
 
 /// An error type for decoding arrays.
+#[derive(Debug, PartialEq, Eq, Clone, Copy, thiserror::Error)]
 pub enum ArrayDecodeError {
+    #[error("invalid length")]
     InvalidLength,
 }
+
+impl crate::error::StoreyError for ArrayDecodeError {}
 
 impl<const N: usize> OwnedKey for [u8; N] {
     type Error = ArrayDecodeError;
@@ -180,6 +186,8 @@ pub enum NumericKeyDecodeError {
     #[error("invalid length")]
     InvalidLength,
 }
+
+impl crate::error::StoreyError for NumericKeyDecodeError {}
 
 macro_rules! impl_key_for_numeric {
     ($($t:ty),*) => {

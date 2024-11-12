@@ -13,6 +13,8 @@
 mod backend;
 pub mod containers;
 mod encoding;
+mod std_error;
 
 pub use backend::CwStorage;
 pub use encoding::CwEncoding;
+pub use std_error::IntoStdError;
