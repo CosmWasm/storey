@@ -10,22 +10,23 @@ use crate::storage::{Storage, StorageMut};
 use super::common::TryGetError;
 use super::{BoundFor, BoundedIterableAccessor, IterableAccessor, NonTerminal, Storable};
 
-/// The first (lowest) index that is pushed to the column.
-const FIRST_INDEX: u32 = 1;
+/// The first (lowest) ID that is pushed to the column.
+const FIRST_ID: u32 = 1;
 
 /// Storage keys for metadata.
 mod meta_keys {
-    /// The last index that has been pushed to the column.
-    /// This does not have to be the index of the last element as it is
+    /// The last ID that has been pushed to the column.
+    /// This does not have to be the ID of the last element as it is
     /// not reset in case the last element is removed.
-    pub const META_LAST_IX: &[u8] = &[0];
+    pub const META_LAST_ID: &[u8] = &[0];
     pub const META_LEN: &[u8] = &[1];
 }
 
 /// A collection of rows indexed by `u32` keys. This is somewhat similar to a traditional
-/// database table with an auto-incrementing primary key.
+/// database table with an auto-incrementing primary key. We often call column keys "IDs"
+/// to differentiate them from other entities.
 ///
-/// The key is encoded as a big-endian `u32` integer.
+/// The ID is currently encoded as a big-endian `u32` integer.
 ///
 /// # Example
 /// ```
@@ -98,7 +99,7 @@ where
     type Kind = NonTerminal;
     type Accessor<S> = ColumnAccess<E, T, S>;
     type Key = u32;
-    type KeyDecodeError = ColumnKeyDecodeError;
+    type KeyDecodeError = ColumnIdDecodeError;
     type Value = T;
     type ValueDecodeError = E::DecodeError;
 
@@ -109,8 +110,8 @@ where
         }
     }
 
-    fn decode_key(key: &[u8]) -> Result<Self::Key, ColumnKeyDecodeError> {
-        let key = decode_ix(key)?;
+    fn decode_key(key: &[u8]) -> Result<Self::Key, ColumnIdDecodeError> {
+        let key = decode_id(key)?;
 
         Ok(key)
     }
@@ -122,7 +123,7 @@ where
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, thiserror::Error)]
 #[error("invalid key length, expected 4 bytes of big-endian u32")]
-pub struct ColumnKeyDecodeError;
+pub struct ColumnIdDecodeError;
 
 /// An accessor for a `Column`.
 ///
@@ -166,7 +167,7 @@ where
     T: EncodableWith<E> + DecodableWith<E>,
     S: Storage,
 {
-    /// Get the value associated with the given key.
+    /// Get the value associated with the given ID.
     ///
     /// Returns `Ok(None)` if the entry doesn't exist (has not been set yet).
     ///
@@ -184,14 +185,14 @@ where
     /// assert_eq!(access.get(1).unwrap(), Some(1337));
     /// assert_eq!(access.get(2).unwrap(), None);
     /// ```
-    pub fn get(&self, key: u32) -> Result<Option<T>, E::DecodeError> {
+    pub fn get(&self, id: u32) -> Result<Option<T>, E::DecodeError> {
         self.storage
-            .get(&encode_ix(key))
+            .get(&encode_id(id))
             .map(|bytes| T::decode(&bytes))
             .transpose()
     }
 
-    /// Get the value associated with the given key.
+    /// Get the value associated with the given ID.
     ///
     /// Returns [`TryGetError::Empty`] if the entry doesn't exist (has not been
     /// set yet).
@@ -214,11 +215,11 @@ where
     /// assert_eq!(access.try_get(1).unwrap(), 1337);
     /// assert!(access.try_get(2).is_err());
     /// ```
-    pub fn try_get(&self, key: u32) -> Result<T, TryGetError<E::DecodeError>> {
-        self.get(key)?.ok_or(TryGetError::Empty)
+    pub fn try_get(&self, id: u32) -> Result<T, TryGetError<E::DecodeError>> {
+        self.get(id)?.ok_or(TryGetError::Empty)
     }
 
-    /// Get the value associated with the given key or a provided default.
+    /// Get the value associated with the given ID or a provided default.
     ///
     /// Returns the provided default value if the entry doesn't exist (has not been set yet).
     ///
@@ -236,8 +237,8 @@ where
     /// access.push(&1337).unwrap();
     /// assert_eq!(access.get_or(1, 42).unwrap(), 1337);
     /// ```
-    pub fn get_or(&self, key: u32, default: T) -> Result<T, E::DecodeError> {
-        self.get(key).map(|value| value.unwrap_or(default))
+    pub fn get_or(&self, id: u32, default: T) -> Result<T, E::DecodeError> {
+        self.get(id).map(|value| value.unwrap_or(default))
     }
 
     /// Get the length of the column. This is the number of elements actually stored,
@@ -297,18 +298,18 @@ where
     }
 }
 
-fn decode_ix(key: &[u8]) -> Result<u32, ColumnKeyDecodeError> {
-    if key.len() != 4 {
-        return Err(ColumnKeyDecodeError);
+fn decode_id(id: &[u8]) -> Result<u32, ColumnIdDecodeError> {
+    if id.len() != 4 {
+        return Err(ColumnIdDecodeError);
     }
 
-    let row_key = u32::from_be_bytes([key[0], key[1], key[2], key[3]]);
+    let row_key = u32::from_be_bytes([id[0], id[1], id[2], id[3]]);
 
     Ok(row_key)
 }
 
-fn encode_ix(key: u32) -> [u8; 4] {
-    key.to_be_bytes()
+fn encode_id(id: u32) -> [u8; 4] {
+    id.to_be_bytes()
 }
 
 impl<E, T, S> ColumnAccess<E, T, S>
@@ -319,8 +320,8 @@ where
 {
     /// Append a new value to the end of the column.
     ///
-    /// Returns the key of the newly inserted value. If the column is empty, the first
-    /// key will be `1`.
+    /// Returns the ID of the newly inserted value. If the column is empty, the first
+    /// ID will be `1`.
     ///
     /// # Example
     /// ```
@@ -340,19 +341,19 @@ where
     pub fn push(&mut self, value: &T) -> Result<u32, PushError<E::EncodeError>> {
         let bytes = value.encode()?;
 
-        let ix = match self
+        let id = match self
             .storage
-            .get_meta(meta_keys::META_LAST_IX)
+            .get_meta(meta_keys::META_LAST_ID)
             .map(|bytes| u32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]))
         {
-            Some(last_ix) => last_ix.checked_add(1).ok_or(PushError::IndexOverflow)?,
-            None => FIRST_INDEX,
+            Some(last_id) => last_id.checked_add(1).ok_or(PushError::IdOverflow)?,
+            None => FIRST_ID,
         };
 
-        self.storage.set(&encode_ix(ix), &bytes);
+        self.storage.set(&encode_id(id), &bytes);
 
         self.storage
-            .set_meta(meta_keys::META_LAST_IX, &(ix).to_be_bytes());
+            .set_meta(meta_keys::META_LAST_ID, &(id).to_be_bytes());
         let len = self
             .storage
             .get_meta(meta_keys::META_LEN)
@@ -361,10 +362,10 @@ where
         self.storage
             .set_meta(meta_keys::META_LEN, &(len + 1).to_be_bytes());
 
-        Ok(ix)
+        Ok(id)
     }
 
-    /// Update the value associated with the given key.
+    /// Update the value associated with the given ID.
     ///
     /// # Example
     /// ```
@@ -382,21 +383,21 @@ where
     /// access.update(1, &9001).unwrap();
     /// assert_eq!(access.get(1).unwrap(), Some(9001));
     /// ```
-    pub fn update(&mut self, key: u32, value: &T) -> Result<(), UpdateError<E::EncodeError>> {
+    pub fn update(&mut self, id: u32, value: &T) -> Result<(), UpdateError<E::EncodeError>> {
         self.storage
-            .get(&encode_ix(key))
+            .get(&encode_id(id))
             .ok_or(UpdateError::NotFound)?;
 
         let bytes = value.encode()?;
 
-        self.storage.set(&encode_ix(key), &bytes);
+        self.storage.set(&encode_id(id), &bytes);
 
         Ok(())
     }
 
-    /// Remove the value associated with the given key.
+    /// Remove the value associated with the given ID.
     ///
-    /// This operation leaves behind an empty slot in the column. The key is not reused.
+    /// This operation leaves behind an empty slot in the column. The ID is not reused.
     ///
     /// # Example
     /// ```
@@ -414,8 +415,8 @@ where
     /// access.remove(1).unwrap();
     /// assert_eq!(access.get(1).unwrap(), None);
     /// ```
-    pub fn remove(&mut self, key: u32) -> Result<(), RemoveError> {
-        self.storage.remove(&encode_ix(key));
+    pub fn remove(&mut self, id: u32) -> Result<(), RemoveError> {
+        self.storage.remove(&encode_id(id));
 
         let len = self
             .storage
@@ -431,8 +432,8 @@ where
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Error)]
 pub enum PushError<E> {
-    #[error("index overflow")]
-    IndexOverflow,
+    #[error("ID overflow")]
+    IdOverflow,
     #[error("{0}")]
     EncodingError(E),
 }
