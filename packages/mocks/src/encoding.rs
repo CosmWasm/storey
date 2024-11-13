@@ -9,9 +9,18 @@ use storey_encoding::{Cover, DecodableWithImpl, EncodableWithImpl, Encoding};
 
 pub struct TestEncoding;
 
+#[derive(Debug, PartialEq)]
+pub struct MockError;
+
+impl std::fmt::Display for MockError {
+    fn fmt(&self, _: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        Ok(())
+    }
+}
+
 impl Encoding for TestEncoding {
-    type DecodeError = ();
-    type EncodeError = ();
+    type DecodeError = MockError;
+    type EncodeError = MockError;
 }
 
 // This is how we would implement `EncodableWith` and `DecodableWith` for
@@ -39,16 +48,16 @@ where
 // Imagine `MyTestEncoding` is a third-party trait that we don't control.
 
 trait MyTestEncoding: Sized {
-    fn my_encode(&self) -> Result<Vec<u8>, ()>;
-    fn my_decode(data: &[u8]) -> Result<Self, ()>;
+    fn my_encode(&self) -> Result<Vec<u8>, MockError>;
+    fn my_decode(data: &[u8]) -> Result<Self, MockError>;
 }
 
 impl MyTestEncoding for u64 {
-    fn my_encode(&self) -> Result<Vec<u8>, ()> {
+    fn my_encode(&self) -> Result<Vec<u8>, MockError> {
         Ok(self.to_le_bytes().to_vec())
     }
 
-    fn my_decode(data: &[u8]) -> Result<Self, ()> {
+    fn my_decode(data: &[u8]) -> Result<Self, MockError> {
         let mut bytes = [0u8; 8];
         bytes.copy_from_slice(data);
         Ok(u64::from_le_bytes(bytes))

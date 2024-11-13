@@ -212,7 +212,7 @@ impl<E, T, S> ItemAccess<E, T, S>
 where
     E: Encoding,
     T: EncodableWith<E> + DecodableWith<E>,
-    S: StorageMut,
+    S: Storage + StorageMut,
 {
     /// Set the value of the item.
     ///
@@ -234,6 +234,14 @@ where
         Ok(())
     }
 
+    pub fn update<F>(&mut self, f: F) -> Result<(), UpdateError<E>>
+    where
+        F: FnOnce(Option<T>) -> T,
+    {
+        let new_value = f(self.get().map_err(UpdateError::Decode)?);
+        self.set(&new_value).map_err(UpdateError::Encode)
+    }
+
     /// Remove the value of the item.
     ///
     /// # Example
@@ -252,6 +260,19 @@ where
     pub fn remove(&mut self) {
         self.storage.remove(&[]);
     }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy, thiserror::Error)]
+pub enum UpdateError<E>
+where
+    E: Encoding,
+    E::DecodeError: std::fmt::Display,
+    E::EncodeError: std::fmt::Display,
+{
+    #[error("decode error: {0}")]
+    Decode(E::DecodeError),
+    #[error("encode error: {0}")]
+    Encode(E::EncodeError),
 }
 
 #[cfg(test)]
