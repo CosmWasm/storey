@@ -234,12 +234,37 @@ where
         Ok(())
     }
 
-    pub fn update<F>(&mut self, f: F) -> Result<(), UpdateError<E>>
+    /// Update the value of the item.
+    ///
+    /// The function `f` is called with the current value of the item, if it exists.
+    /// If the function returns `Some`, the item is set to the new value.
+    /// If the function returns `None`, the item is removed.
+    ///
+    /// # Example
+    /// ```
+    /// # use mocks::encoding::TestEncoding;
+    /// # use mocks::backend::TestStorage;
+    /// use storey::containers::Item;
+    ///
+    /// let mut storage = TestStorage::new();
+    /// let item = Item::<u64, TestEncoding>::new(0);
+    ///
+    /// item.access(&mut storage).set(&42).unwrap();
+    /// item.access(&mut storage).update(|value| value.map(|v| v + 1)).unwrap();
+    /// assert_eq!(item.access(&storage).get().unwrap(), Some(43));
+    /// ```
+    pub fn update<F>(&mut self, f: F) -> Result<(), UpdateError<E::DecodeError, E::EncodeError>>
     where
-        F: FnOnce(Option<T>) -> T,
+        F: FnOnce(Option<T>) -> Option<T>,
     {
         let new_value = f(self.get().map_err(UpdateError::Decode)?);
-        self.set(&new_value).map_err(UpdateError::Encode)
+        match new_value {
+            Some(value) => self.set(&value).map_err(UpdateError::Encode),
+            None => {
+                self.remove();
+                Ok(())
+            }
+        }
     }
 
     /// Remove the value of the item.
@@ -263,16 +288,11 @@ where
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, thiserror::Error)]
-pub enum UpdateError<E>
-where
-    E: Encoding,
-    E::DecodeError: std::fmt::Display,
-    E::EncodeError: std::fmt::Display,
-{
+pub enum UpdateError<D, E> {
     #[error("decode error: {0}")]
-    Decode(E::DecodeError),
+    Decode(D),
     #[error("encode error: {0}")]
-    Encode(E::EncodeError),
+    Encode(E),
 }
 
 #[cfg(test)]
@@ -296,5 +316,21 @@ mod tests {
         assert_eq!(storage.get(&[0]), Some(42u64.to_le_bytes().to_vec()));
         assert_eq!(access1.get().unwrap(), None);
         assert_eq!(storage.get(&[1]), None);
+    }
+
+    #[test]
+    fn update() {
+        let mut storage = TestStorage::new();
+
+        let item = Item::<u64, TestEncoding>::new(0);
+        item.access(&mut storage).set(&42).unwrap();
+
+        item.access(&mut storage)
+            .update(|value| value.map(|v| v + 1))
+            .unwrap();
+        assert_eq!(item.access(&storage).get().unwrap(), Some(43));
+
+        item.access(&mut storage).update(|_| None).unwrap();
+        assert_eq!(item.access(&storage).get().unwrap(), None);
     }
 }

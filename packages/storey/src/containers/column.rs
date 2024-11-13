@@ -365,7 +365,7 @@ where
         Ok(id)
     }
 
-    /// Update the value associated with the given ID.
+    /// Set the value associated with the given ID.
     ///
     /// # Example
     /// ```
@@ -380,10 +380,10 @@ where
     /// access.push(&1337).unwrap();
     /// assert_eq!(access.get(1).unwrap(), Some(1337));
     ///
-    /// access.update(1, &9001).unwrap();
+    /// access.set(1, &9001).unwrap();
     /// assert_eq!(access.get(1).unwrap(), Some(9001));
     /// ```
-    pub fn update(&mut self, id: u32, value: &T) -> Result<(), UpdateError<E::EncodeError>> {
+    pub fn set(&mut self, id: u32, value: &T) -> Result<(), UpdateError<E::EncodeError>> {
         self.storage
             .get(&encode_id(id))
             .ok_or(UpdateError::NotFound)?;
@@ -497,8 +497,8 @@ mod tests {
         assert_eq!(access.len().unwrap(), 2);
 
         access.remove(1).unwrap();
-        assert_eq!(access.update(1, &9001), Err(UpdateError::NotFound));
-        access.update(2, &9001).unwrap();
+        assert_eq!(access.set(1, &9001), Err(UpdateError::NotFound));
+        access.set(2, &9001).unwrap();
 
         assert_eq!(access.get(1).unwrap(), None);
         assert_eq!(access.get(2).unwrap(), Some(9001));
