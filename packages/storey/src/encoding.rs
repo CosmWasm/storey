@@ -34,15 +34,15 @@
 //! struct DisplayEncoding;
 //!
 //! impl Encoding for DisplayEncoding {
-//!     type DecodeError = ();
-//!     type EncodeError = ();
+//!     type DecodeError = String;
+//!     type EncodeError = String;
 //! }
 //!
 //! impl<T> EncodableWithImpl<DisplayEncoding> for Cover<&T,>
 //! where
 //!     T: std::fmt::Display,
 //! {
-//!     fn encode_impl(self) -> Result<Vec<u8>, ()> {
+//!     fn encode_impl(self) -> Result<Vec<u8>, String> {
 //!         Ok(format!("{}", self.0).into_bytes())
 //!     }
 //! }
@@ -67,17 +67,18 @@
 //! struct DisplayEncoding;
 //!
 //! impl Encoding for DisplayEncoding {
-//!    type DecodeError = ();
-//!    type EncodeError = ();
+//!    type DecodeError = String;
+//!    type EncodeError = String;
 //! }
 //!
 //! impl<T> DecodableWithImpl<DisplayEncoding> for Cover<T>
 //! where
 //!     T: std::str::FromStr,
 //! {
-//!     fn decode_impl(data: &[u8]) -> Result<Self, ()> {
-//!         let string = String::from_utf8(data.to_vec()).map_err(|_| ())?;
-//!         let value = string.parse().map_err(|_| ())?;
+//!     fn decode_impl(data: &[u8]) -> Result<Self, String> {
+//!         let string =
+//!             String::from_utf8(data.to_vec()).map_err(|_| "string isn't UTF-8".to_string())?;
+//!         let value = string.parse().map_err(|_| "parsing failed".to_string())?;
 //!         Ok(Cover(value))
 //!     }
 //! }

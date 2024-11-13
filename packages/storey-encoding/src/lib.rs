@@ -1,9 +1,9 @@
 pub trait Encoding {
     /// The error type returned when encoding fails.
-    type EncodeError;
+    type EncodeError: std::fmt::Display;
 
     /// The error type returned when decoding fails.
-    type DecodeError;
+    type DecodeError: std::fmt::Display;
 }
 
 pub trait EncodableWith<E: Encoding>: sealed::SealedE<E> {
