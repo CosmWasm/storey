@@ -25,7 +25,9 @@ commit_parsers = [
 
 [workspace]
 git_tag_enable = false
+git_release_enable = false
 
 [[package]]
 name = "cw-storey"
 git_tag_enable = true
+git_release_enable = true
