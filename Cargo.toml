@@ -3,6 +3,7 @@ members = ["packages/*"]
 resolver = "2"
 
 [workspace.package]
+version = "0.4.0"
 authors = ["Tomasz Kurcz", "Confio GmbH"]
 license = "Apache-2.0"
 repository = "https://github.com/CosmWasm/storey"
@@ -11,6 +12,6 @@ categories = ["cryptography::cryptocurrencies"]
 keywords = ["CosmWasm"]
 
 [workspace.dependencies]
-storey = { path = "packages/storey", version = "0.3" }
-storey-encoding = { path = "packages/storey-encoding", version = "0.1" }
-storey-storage = { path = "packages/storey-storage", version = "0.1" }
+storey = { path = "packages/storey", version = "0.4" }
+storey-encoding = { path = "packages/storey-encoding", version = "0.4" }
+storey-storage = { path = "packages/storey-storage", version = "0.4" }
