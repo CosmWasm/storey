@@ -20,4 +20,4 @@ jobs:
         with:
           tool: cargo-release
       - name: Build
-        run: cargo release
+        run: cargo release # stuff
