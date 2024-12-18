@@ -18,3 +18,7 @@ pub mod containers;
 pub mod encoding;
 pub mod error;
 pub mod storage;
+
+pub fn foo() {
+    println!("Hello, world!");
+}
