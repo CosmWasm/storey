@@ -23,7 +23,7 @@ where
     T: serde::Serialize,
 {
     fn encode_impl(self) -> Result<Vec<u8>, StdError> {
-        cosmwasm_std_new::to_msgpack_vec(self.0)
+        cosmwasm_std::to_msgpack_vec(self.0)
     }
 }
 
@@ -32,27 +32,6 @@ where
     T: serde::de::DeserializeOwned,
 {
     fn decode_impl(data: &[u8]) -> Result<Self, StdError> {
-        cosmwasm_std_new::from_msgpack(data).map(Cover)
-    }
-}
-
-// TODO: remove this module once the following PR is released on crates.io:
-// https://github.com/CosmWasm/cosmwasm/pull/2118
-mod cosmwasm_std_new {
-    use core::any::type_name;
-
-    use cosmwasm_std::{StdError, StdResult};
-    use serde::de::DeserializeOwned;
-    use serde::Serialize;
-
-    pub(super) fn from_msgpack<T: DeserializeOwned>(value: impl AsRef<[u8]>) -> StdResult<T> {
-        rmp_serde::from_read(value.as_ref()).map_err(|e| StdError::parse_err(type_name::<T>(), e))
-    }
-
-    pub(super) fn to_msgpack_vec<T>(data: &T) -> StdResult<Vec<u8>>
-    where
-        T: Serialize + ?Sized,
-    {
-        rmp_serde::to_vec_named(data).map_err(|e| StdError::serialize_err(type_name::<T>(), e))
+        cosmwasm_std::from_msgpack(data).map(Cover)
     }
 }
