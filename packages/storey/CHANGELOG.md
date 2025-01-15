@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+## [0.4.0] - 2025-01-15
+
+
+### Added
+- add `Column::update`
+- [**breaking**] add `update` method to `ItemAccess`
+- inclusive/exclusive bounds
+- bounded reverse iteration
+- reverse iteration
+
+### Fixed
+- [**breaking**] rename `Column::update` to `Column::set`
+- [**breaking**] make column id naming consistent
+- [**breaking**] start column ids with 1
+- [**breaking**] #63 sane ordering for signed map keys
 
 ## [0.3.0] - 2024-09-11
 
