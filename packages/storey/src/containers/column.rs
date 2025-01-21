@@ -1,5 +1,6 @@
 use std::marker::PhantomData;
 
+use storey_storage::IntoStorage;
 use thiserror::Error;
 
 use crate::encoding::Encoding;
@@ -86,7 +87,12 @@ where
     /// let column = Column::<u64, TestEncoding>::new(0);
     /// let mut access = column.access(&mut storage);
     /// ```
-    pub fn access<S>(&self, storage: S) -> ColumnAccess<E, T, StorageBranch<S>> {
+    pub fn access<F, S>(&self, storage: F) -> ColumnAccess<E, T, StorageBranch<S>>
+    where
+        (F,): IntoStorage<S>,
+    {
+        let storage = (storage,).into_storage();
+
         Self::access_impl(StorageBranch::new(storage, vec![self.prefix]))
     }
 }
