@@ -1,5 +1,7 @@
 use std::marker::PhantomData;
 
+use storey_storage::IntoStorage;
+
 use crate::encoding::{DecodableWith, EncodableWith, Encoding};
 use crate::storage::StorageBranch;
 use crate::storage::{Storage, StorageMut};
@@ -61,7 +63,12 @@ where
     /// let mut storage = TestStorage::new();
     /// let item = Item::<u64, TestEncoding>::new(0);
     /// let mut access = item.access(&mut storage);
-    pub fn access<S>(&self, storage: S) -> ItemAccess<E, T, StorageBranch<S>> {
+    pub fn access<F, S>(&self, storage: F) -> ItemAccess<E, T, StorageBranch<S>>
+    where
+        (F,): IntoStorage<S>,
+    {
+        let storage = (storage,).into_storage();
+
         Self::access_impl(StorageBranch::new(storage, vec![self.key]))
     }
 }

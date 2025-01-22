@@ -34,7 +34,7 @@ impl<S> StorageBranch<S> {
     }
 }
 
-impl<S: Storage> Storage for StorageBranch<&S> {
+impl<S: Storage + ?Sized> Storage for StorageBranch<&S> {
     fn get(&self, key: &[u8]) -> Option<Vec<u8>> {
         self.backend.get(&[&self.prefix[..], key].concat())
     }
@@ -44,7 +44,7 @@ impl<S: Storage> Storage for StorageBranch<&S> {
     }
 }
 
-impl<S: Storage> Storage for StorageBranch<&mut S> {
+impl<S: Storage + ?Sized> Storage for StorageBranch<&mut S> {
     fn get(&self, key: &[u8]) -> Option<Vec<u8>> {
         self.backend.get(&[&self.prefix[..], key].concat())
     }
@@ -54,7 +54,7 @@ impl<S: Storage> Storage for StorageBranch<&mut S> {
     }
 }
 
-impl<S: StorageMut> StorageMut for StorageBranch<&mut S> {
+impl<S: StorageMut + ?Sized> StorageMut for StorageBranch<&mut S> {
     fn set(&mut self, key: &[u8], value: &[u8]) {
         self.backend.set(&[&self.prefix[..], key].concat(), value)
     }
@@ -73,7 +73,7 @@ impl<S: StorageMut> StorageMut for StorageBranch<&mut S> {
     }
 }
 
-impl<S: IterableStorage> IterableStorage for StorageBranch<&S> {
+impl<S: IterableStorage + ?Sized> IterableStorage for StorageBranch<&S> {
     type KeysIterator<'a> = BranchKeysIter<S::KeysIterator<'a>> where Self: 'a;
     type ValuesIterator<'a> = S::ValuesIterator<'a> where Self: 'a;
     type PairsIterator<'a> = BranchKVIter<S::PairsIterator<'a>> where Self: 'a;
@@ -112,7 +112,7 @@ impl<S: IterableStorage> IterableStorage for StorageBranch<&S> {
     }
 }
 
-impl<S: IterableStorage> IterableStorage for StorageBranch<&mut S> {
+impl<S: IterableStorage + ?Sized> IterableStorage for StorageBranch<&mut S> {
     type KeysIterator<'a> = BranchKeysIter<S::KeysIterator<'a>> where Self: 'a;
     type ValuesIterator<'a> = S::ValuesIterator<'a> where Self: 'a;
     type PairsIterator<'a> = BranchKVIter<S::PairsIterator<'a>> where Self: 'a;
@@ -151,7 +151,7 @@ impl<S: IterableStorage> IterableStorage for StorageBranch<&mut S> {
     }
 }
 
-impl<S: RevIterableStorage> RevIterableStorage for StorageBranch<&S> {
+impl<S: RevIterableStorage + ?Sized> RevIterableStorage for StorageBranch<&S> {
     type RevKeysIterator<'a> = BranchKeysIter<S::RevKeysIterator<'a>> where Self: 'a;
     type RevValuesIterator<'a> = S::RevValuesIterator<'a> where Self: 'a;
     type RevPairsIterator<'a> = BranchKVIter<S::RevPairsIterator<'a>> where Self: 'a;
@@ -198,7 +198,7 @@ impl<S: RevIterableStorage> RevIterableStorage for StorageBranch<&S> {
     }
 }
 
-impl<S: RevIterableStorage> RevIterableStorage for StorageBranch<&mut S> {
+impl<S: RevIterableStorage + ?Sized> RevIterableStorage for StorageBranch<&mut S> {
     type RevKeysIterator<'a> = BranchKeysIter<S::RevKeysIterator<'a>> where Self: 'a;
     type RevValuesIterator<'a> = S::RevValuesIterator<'a> where Self: 'a;
     type RevPairsIterator<'a> = BranchKVIter<S::RevPairsIterator<'a>> where Self: 'a;

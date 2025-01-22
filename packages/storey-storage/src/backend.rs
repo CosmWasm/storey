@@ -30,7 +30,7 @@ pub trait StorageBackendMut {
 
 impl<B> Storage for B
 where
-    B: StorageBackend,
+    B: StorageBackend + ?Sized,
 {
     fn get(&self, key: &[u8]) -> Option<Vec<u8>> {
         StorageBackend::get(self, key)
@@ -51,7 +51,7 @@ where
 
 impl<B> StorageMut for B
 where
-    B: StorageBackendMut,
+    B: StorageBackendMut + ?Sized,
 {
     fn set(&mut self, key: &[u8], value: &[u8]) {
         StorageBackendMut::set(self, key, value)

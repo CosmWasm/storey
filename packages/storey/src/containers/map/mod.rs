@@ -7,8 +7,7 @@ use key_encoding::KeyEncodingT;
 
 use std::{borrow::Borrow, marker::PhantomData};
 
-use crate::storage::IterableStorage;
-use crate::storage::StorageBranch;
+use crate::storage::{IntoStorage, IterableStorage, StorageBranch};
 
 use self::key::DynamicKey;
 use self::key::FixedSizeKey;
@@ -99,7 +98,12 @@ where
     /// let map = Map::<String, Item<u64, TestEncoding>>::new(0);
     /// let mut access = map.access(&mut storage);
     /// ```
-    pub fn access<S>(&self, storage: S) -> MapAccess<K, V, StorageBranch<S>> {
+    pub fn access<F, S>(&self, storage: F) -> MapAccess<K, V, StorageBranch<S>>
+    where
+        (F,): IntoStorage<S>,
+    {
+        let storage = (storage,).into_storage();
+
         Self::access_impl(StorageBranch::new(storage, vec![self.prefix]))
     }
 }
