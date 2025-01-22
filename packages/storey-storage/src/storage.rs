@@ -19,14 +19,6 @@ pub trait Storage {
     }
 }
 
-/// A trait for converting a type into one that implements [`Storage`].
-///
-/// This trait is meant to be implemented for a tuple of the intended type, as in
-/// `impl IntoStorage<T> for (T,)`. This is to allow blanket implementations on foreign
-/// types without stumbling into [E0210](https://stackoverflow.com/questions/63119000/why-am-i-required-to-cover-t-in-impl-foreigntraitlocaltype-for-t-e0210).
-///  
-/// Implementing this trait for foreign types allows to use those foreign types directly
-/// with functions like [`Item::access`](crate::Item::access).
 pub trait IntoStorage<O>: Sized {
     fn into_storage(self) -> O;
 }
