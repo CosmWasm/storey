@@ -26,6 +26,13 @@ pub trait Storable {
     /// [`Storage`]: crate::storage::Storage
     type Accessor<S>;
 
+    /// Create an accessor for this collection/container, given a [`Storage`] implementation.
+    ///
+    /// [`Storage`]: crate::storage::Storage
+    fn access_impl<S>(storage: S) -> Self::Accessor<S>;
+}
+
+pub trait IterableStorable: Storable {
     /// The Key type for this collection/container. This is the type that will be used in
     /// key iteration.
     ///
@@ -44,11 +51,6 @@ pub trait Storable {
 
     /// The error type for decoding values.
     type ValueDecodeError;
-
-    /// Create an accessor for this collection/container, given a [`Storage`] implementation.
-    ///
-    /// [`Storage`]: crate::storage::Storage
-    fn access_impl<S>(storage: S) -> Self::Accessor<S>;
 
     /// Decode a key from a byte slice.
     ///
@@ -363,7 +365,7 @@ pub struct StorableIter<S, I> {
 
 impl<S, I> Iterator for StorableIter<S, I>
 where
-    S: Storable,
+    S: IterableStorable,
     I: Iterator<Item = (Vec<u8>, Vec<u8>)>,
 {
     type Item = Result<(S::Key, S::Value), KVDecodeError<S::KeyDecodeError, S::ValueDecodeError>>;
@@ -387,7 +389,7 @@ pub struct StorableKeys<S, I> {
 
 impl<S, I> Iterator for StorableKeys<S, I>
 where
-    S: Storable,
+    S: IterableStorable,
     I: Iterator<Item = Vec<u8>>,
 {
     type Item = Result<S::Key, S::KeyDecodeError>;
@@ -405,7 +407,7 @@ pub struct StorableValues<S, I> {
 
 impl<S, I> Iterator for StorableValues<S, I>
 where
-    S: Storable,
+    S: IterableStorable,
     I: Iterator<Item = Vec<u8>>,
 {
     type Item = Result<S::Value, S::ValueDecodeError>;

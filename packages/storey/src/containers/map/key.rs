@@ -18,6 +18,26 @@ pub trait OwnedKey: Key {
         Self: Sized;
 }
 
+pub trait IntoKey<O> {
+    fn into_key(self) -> O;
+}
+
+impl<T> IntoKey<T> for (T,) {
+    fn into_key(self) -> T {
+        self.0
+    }
+}
+
+pub trait IntoOwnedKey<O> {
+    fn into_owned_key(self) -> O;
+}
+
+impl<T> IntoOwnedKey<T> for (T,) {
+    fn into_owned_key(self) -> T {
+        self.0
+    }
+}
+
 impl Key for String {
     type Kind = DynamicKey;
 

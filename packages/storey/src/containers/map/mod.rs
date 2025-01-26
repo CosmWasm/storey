@@ -1,7 +1,7 @@
 pub mod key;
 mod key_encoding;
 
-pub use key::{Key, OwnedKey};
+pub use key::{IntoKey, IntoOwnedKey, Key, OwnedKey};
 use key_encoding::KeyEncoding;
 use key_encoding::KeyEncodingT;
 
@@ -15,6 +15,7 @@ use self::key::FixedSizeKey;
 use super::BoundFor;
 use super::BoundedIterableAccessor;
 use super::IterableAccessor;
+use super::IterableStorable;
 use super::NonTerminal;
 use super::Storable;
 use super::Terminal;
@@ -60,13 +61,7 @@ pub struct Map<K: ?Sized, V> {
     phantom: PhantomData<(*const K, V)>,
 }
 
-impl<K, V> Map<K, V>
-where
-    K: OwnedKey,
-    V: Storable,
-    <V as Storable>::KeyDecodeError: std::fmt::Display,
-    (K::Kind, V::Kind): KeyEncodingT,
-{
+impl<K, V> Map<K, V> {
     /// Creates a new map with the given prefix.
     ///
     /// It is the responsibility of the caller to ensure that the prefix is unique and does not conflict
@@ -108,19 +103,9 @@ where
     }
 }
 
-impl<K, V> Storable for Map<K, V>
-where
-    K: OwnedKey,
-    V: Storable,
-    <V as Storable>::KeyDecodeError: std::fmt::Display,
-    (K::Kind, V::Kind): KeyEncodingT,
-{
+impl<K, V> Storable for Map<K, V> {
     type Kind = NonTerminal;
     type Accessor<S> = MapAccess<K, V, S>;
-    type Key = (K, V::Key);
-    type KeyDecodeError = MapKeyDecodeError<V::KeyDecodeError>;
-    type Value = V::Value;
-    type ValueDecodeError = V::ValueDecodeError;
 
     fn access_impl<S>(storage: S) -> MapAccess<K, V, S> {
         MapAccess {
@@ -128,6 +113,19 @@ where
             phantom: PhantomData,
         }
     }
+}
+
+impl<K, V> IterableStorable for Map<K, V>
+where
+    K: OwnedKey,
+    V: IterableStorable,
+    <V as IterableStorable>::KeyDecodeError: std::fmt::Display,
+    (K::Kind, V::Kind): KeyEncodingT,
+{
+    type Key = (K, V::Key);
+    type KeyDecodeError = MapKeyDecodeError<V::KeyDecodeError>;
+    type Value = V::Value;
+    type ValueDecodeError = V::ValueDecodeError;
 
     fn decode_key(key: &[u8]) -> Result<Self::Key, MapKeyDecodeError<V::KeyDecodeError>> {
         let behavior = <(K::Kind, V::Kind)>::BEHAVIOR;
@@ -297,8 +295,8 @@ fn len_prefix<T: AsRef<[u8]>>(bytes: T) -> Vec<u8> {
 impl<K, V, S> IterableAccessor for MapAccess<K, V, S>
 where
     K: OwnedKey,
-    V: Storable,
-    <V as Storable>::KeyDecodeError: std::fmt::Display,
+    V: IterableStorable,
+    <V as IterableStorable>::KeyDecodeError: std::fmt::Display,
     S: IterableStorage,
     (K::Kind, V::Kind): KeyEncodingT,
 {
@@ -320,8 +318,8 @@ where
 impl<K, V, S> BoundedIterableAccessor for MapAccess<K, V, S>
 where
     K: OwnedKey,
-    V: Storable,
-    <V as Storable>::KeyDecodeError: std::fmt::Display,
+    V: IterableStorable,
+    <V as IterableStorable>::KeyDecodeError: std::fmt::Display,
     S: IterableStorage,
     (K::Kind, V::Kind): BoundedIterationAllowed + KeyEncodingT,
 {
