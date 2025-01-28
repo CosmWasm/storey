@@ -5,6 +5,7 @@ use storey::storage::{
 };
 
 /// A wrapper around a type implementing [`cosmwasm_std::Storage`] that integrates it with [`storey`].
+#[repr(transparent)]
 pub struct CwStorage<S: ?Sized>(pub S);
 
 impl<S> StorageBackend for CwStorage<S>
@@ -33,9 +34,18 @@ impl<S> IterableStorage for CwStorage<S>
 where
     S: cosmwasm_std::Storage + ?Sized,
 {
-    type KeysIterator<'a> = Box<dyn Iterator<Item = Vec<u8>> + 'a> where Self: 'a;
-    type ValuesIterator<'a> = Box<dyn Iterator<Item = Vec<u8>> + 'a> where Self: 'a;
-    type PairsIterator<'a> = Box<dyn Iterator<Item = (Vec<u8>, Vec<u8>)> + 'a> where Self: 'a;
+    type KeysIterator<'a>
+        = Box<dyn Iterator<Item = Vec<u8>> + 'a>
+    where
+        Self: 'a;
+    type ValuesIterator<'a>
+        = Box<dyn Iterator<Item = Vec<u8>> + 'a>
+    where
+        Self: 'a;
+    type PairsIterator<'a>
+        = Box<dyn Iterator<Item = (Vec<u8>, Vec<u8>)> + 'a>
+    where
+        Self: 'a;
 
     fn keys<'a>(&'a self, start: Bound<&[u8]>, end: Bound<&[u8]>) -> Self::KeysIterator<'a> {
         let (start, end) = bounds_to_option(start, end);
@@ -72,9 +82,18 @@ impl<S> RevIterableStorage for CwStorage<S>
 where
     S: cosmwasm_std::Storage + ?Sized,
 {
-    type RevKeysIterator<'a> = Box<dyn Iterator<Item = Vec<u8>> + 'a> where Self: 'a;
-    type RevValuesIterator<'a> = Box<dyn Iterator<Item = Vec<u8>> + 'a> where Self: 'a;
-    type RevPairsIterator<'a> = Box<dyn Iterator<Item = (Vec<u8>, Vec<u8>)> + 'a> where Self: 'a;
+    type RevKeysIterator<'a>
+        = Box<dyn Iterator<Item = Vec<u8>> + 'a>
+    where
+        Self: 'a;
+    type RevValuesIterator<'a>
+        = Box<dyn Iterator<Item = Vec<u8>> + 'a>
+    where
+        Self: 'a;
+    type RevPairsIterator<'a>
+        = Box<dyn Iterator<Item = (Vec<u8>, Vec<u8>)> + 'a>
+    where
+        Self: 'a;
 
     fn rev_keys<'a>(&'a self, start: Bound<&[u8]>, end: Bound<&[u8]>) -> Self::RevKeysIterator<'a> {
         let (start, end) = bounds_to_option(start, end);

@@ -1,5 +1,7 @@
+pub struct DefaultKeySet;
+
 /// A key that can be used with a [`Map`](super::Map).
-pub trait Key {
+pub trait Key<T = DefaultKeySet> {
     /// The kind of key, meaning either fixed size or dynamic size.
     type Kind: KeyKind;
 
@@ -8,7 +10,7 @@ pub trait Key {
 }
 
 /// An owned key that can be used with a [`Map`](super::Map).
-pub trait OwnedKey: Key {
+pub trait OwnedKey<T = DefaultKeySet>: Key<T> {
     /// The error type that can occur when decoding the key.
     type Error;
 
@@ -16,26 +18,6 @@ pub trait OwnedKey: Key {
     fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error>
     where
         Self: Sized;
-}
-
-pub trait IntoKey<O> {
-    fn into_key(self) -> O;
-}
-
-impl<T> IntoKey<T> for (T,) {
-    fn into_key(self) -> T {
-        self.0
-    }
-}
-
-pub trait IntoOwnedKey<O> {
-    fn into_owned_key(self) -> O;
-}
-
-impl<T> IntoOwnedKey<T> for (T,) {
-    fn into_owned_key(self) -> T {
-        self.0
-    }
 }
 
 impl Key for String {

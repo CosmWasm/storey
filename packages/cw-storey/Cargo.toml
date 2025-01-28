@@ -16,3 +16,6 @@ rmp-serde = "1.1"
 serde = "1"
 
 storey = { workspace = true }
+
+[dev-dependencies]
+mocks = { path = "../mocks" }
