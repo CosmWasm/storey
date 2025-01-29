@@ -195,6 +195,57 @@ mod tests {
     use super::*;
 
     #[test]
+    fn unsigned_ints_1() {
+        let test_vector = [
+            (Uint64::from(0u64), [0, 0, 0, 0, 0, 0, 0, 0]),
+            (Uint64::from(1u64), [0, 0, 0, 0, 0, 0, 0, 1]),
+            (
+                Uint64::from(0x1234567890abcdefu64),
+                [0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xcd, 0xef],
+            ),
+        ];
+
+        for (num, expected) in test_vector.iter() {
+            let encoded = num.encode();
+            assert_eq!(encoded, *expected);
+        }
+
+        for (expected, bytes) in test_vector.iter() {
+            let decoded = Uint64::from_bytes(bytes).unwrap();
+            assert_eq!(decoded, *expected);
+        }
+    }
+
+    #[test]
+    fn unsigned_ints_2() {
+        let test_vector = [
+            (Uint256::from(0u64), [0; 32]),
+            (
+                Uint256::new([
+                    0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xcd, 0xef, 0x12, 0x34, 0x56, 0x78, 0x90,
+                    0xab, 0xcd, 0xef, 0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xcd, 0xef, 0x12, 0x34,
+                    0x56, 0x78, 0x90, 0xab, 0xcd, 0xef,
+                ]),
+                [
+                    0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xcd, 0xef, 0x12, 0x34, 0x56, 0x78, 0x90,
+                    0xab, 0xcd, 0xef, 0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xcd, 0xef, 0x12, 0x34,
+                    0x56, 0x78, 0x90, 0xab, 0xcd, 0xef,
+                ],
+            ),
+        ];
+
+        for (num, expected) in test_vector.iter() {
+            let encoded = num.encode();
+            assert_eq!(encoded, *expected);
+        }
+
+        for (expected, bytes) in test_vector.iter() {
+            let decoded = Uint256::from_bytes(bytes).unwrap();
+            assert_eq!(decoded, *expected);
+        }
+    }
+
+    #[test]
     fn signed_ints() {
         let nums = [
             Int256::from(-542),
