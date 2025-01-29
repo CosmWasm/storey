@@ -1,7 +1,68 @@
+/// The default key set for use with a [`Map`](super::Map).
+///
+/// To find out more about key sets, take a look at the [`Key`] trait's documentation.
 pub struct DefaultKeySet;
 
 /// A key that can be used with a [`Map`](super::Map).
-pub trait Key<T = DefaultKeySet> {
+///
+/// # Key sets
+///
+/// The `KS` type parameter is the "key set" used. This is a marker type that
+/// specifies the kind of keys that can be used with the map. The default key
+/// set is [`DefaultKeySet`]. Providing another key set is an extension mechanism -
+/// third party crates can define their own key set types to support third-party key types,
+/// getting around orphan rules.
+///
+/// # Examples
+///
+/// This example shows how to define an alternative key set type. To use it with a map,
+/// the map also needs to be parameterized with the key set type;
+///
+/// ```
+/// use storey::containers::map::{Key, OwnedKey};
+/// use storey::containers::map::key::{DynamicKey, FixedSizeKey};
+///
+/// pub struct MyKeySet;
+///
+/// // imagine this is a third-party type
+/// pub struct ExtType;
+///
+/// impl Key<MyKeySet> for String {
+///     type Kind = DynamicKey;
+///
+///     fn encode(&self) -> Vec<u8> {
+///         self.as_bytes().to_vec()
+///     }
+/// }
+///
+/// impl OwnedKey<MyKeySet> for String {
+///     type Error = std::string::FromUtf8Error;
+///
+///     fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error> {
+///          String::from_utf8(bytes.to_vec())
+///     }
+/// }
+///
+/// impl Key<MyKeySet> for ExtType {
+///     type Kind = FixedSizeKey<16>;
+///
+///     fn encode(&self) -> Vec<u8> {
+///         todo!()
+///     }
+/// }
+///
+/// impl OwnedKey<MyKeySet> for ExtType {
+///     type Error = ();
+///
+///     fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error> {
+///          todo!()
+///     }
+/// }
+///
+/// // use the key set with a map
+/// let map: storey::containers::map::Map<String, u32, MyKeySet> = storey::containers::map::Map::new(0);
+/// ```
+pub trait Key<KS = DefaultKeySet> {
     /// The kind of key, meaning either fixed size or dynamic size.
     type Kind: KeyKind;
 
@@ -10,6 +71,16 @@ pub trait Key<T = DefaultKeySet> {
 }
 
 /// An owned key that can be used with a [`Map`](super::Map).
+///
+/// # Key sets
+///
+/// The `KS` type parameter is the "key set" used. This is a marker type that
+/// specifies the kind of keys that can be used with the map. The default key
+/// set is [`DefaultKeySet`]. Providing another key set is an extension mechanism -
+/// third party crates can define their own key set types to support third-party key types,
+/// without bumping into orphan rules.
+///
+/// An example of a custom key set is shown in the [`Key`] trait documentation.
 pub trait OwnedKey<T = DefaultKeySet>: Key<T> {
     /// The error type that can occur when decoding the key.
     type Error;

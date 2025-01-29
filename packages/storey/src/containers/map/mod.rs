@@ -28,6 +28,16 @@ use super::Terminal;
 /// A map does not directly manage the storage of its values. Instead, it doles out access to
 /// a collection of other containers.
 ///
+/// # Key sets
+///
+/// The `KS` type parameter is the "key set" used. This is a marker type that
+/// specifies the kind of keys that can be used with the map. The default key
+/// set is [`DefaultKeySet`]. Providing another key set is an extension mechanism -
+/// third party crates can define their own key set types to support third-party key types,
+/// without bumping into orphan rules.
+///
+/// An example of a custom key set implementation is shown in the [`Key`] trait documentation.
+///
 /// # Examples
 ///
 /// ```

@@ -4,6 +4,8 @@
 
 mod key_set;
 
+pub use key_set::CwKeySet;
+
 /// The [`storey::containers::Item`] type with the default encoding for [*CosmWasm*] smart
 /// contracts.
 ///
@@ -16,7 +18,9 @@ pub type Item<T> = storey::containers::Item<T, crate::encoding::CwEncoding>;
 /// [*CosmWasm*]: https://github.com/CosmWasm/cosmwasm
 pub type Column<T> = storey::containers::Column<T, crate::encoding::CwEncoding>;
 
-pub type Map<K, V> = storey::containers::Map<K, V, key_set::CwKeySet>;
+/// The [`storey::containers::Map`] type with the [`CwKeySet`] key set, which includes the
+/// usual standard library types (like `u32` or `String`) as well as `cosmwasm_std` types (like `Addr` and `Uint128`).
+pub type Map<K, V> = storey::containers::Map<K, V, CwKeySet>;
 
 #[cfg(test)]
 mod tests {
