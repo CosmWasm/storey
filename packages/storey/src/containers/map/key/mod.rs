@@ -6,6 +6,16 @@ pub use impls::{ArrayDecodeError, InvalidUtf8, NumericKeyDecodeError};
 pub use key_set::DefaultKeySet;
 pub use kind::{DynamicKey, FixedSizeKey, KeyKind};
 
+/// When applied to a type `KS`, this derive macro generates implementations of the [`Key<KS>`]
+/// and [`OwnedKey<KS>`] traits for appropriate Rust std types. This mirrors the implementations
+/// that exist for [`Key<DefaultKeySet>`](Key#foreign-impls) and [`OwnedKey<DefaultKeySet>`](OwnedKey#foreign-impls).
+///
+/// The purpose is to allow third-party crates to define their own key set types without
+/// reinventing the wheel for the standard library types.
+///
+/// More about key sets can be found in the [`Key`] trait documentation.
+pub use storey_macros::KeySetDefaults;
+
 /// A key that can be used with a [`Map`](super::Map).
 ///
 /// # Key sets
