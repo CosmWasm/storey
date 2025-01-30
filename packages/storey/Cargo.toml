@@ -16,6 +16,7 @@ keywords.workspace = true
 thiserror = "1"
 
 storey-encoding.workspace = true
+storey-macros.workspace = true
 storey-storage.workspace = true
 
 [dev-dependencies]

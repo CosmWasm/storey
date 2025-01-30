@@ -7,7 +7,7 @@ use crate::storage::StorageBranch;
 use crate::storage::{Storage, StorageMut};
 
 use super::common::TryGetError;
-use super::{Storable, Terminal};
+use super::{IterableStorable, Storable, Terminal};
 
 /// A single item in the storage.
 ///
@@ -80,10 +80,6 @@ where
 {
     type Kind = Terminal;
     type Accessor<S> = ItemAccess<E, T, S>;
-    type Key = ();
-    type KeyDecodeError = ItemKeyDecodeError;
-    type Value = T;
-    type ValueDecodeError = E::DecodeError;
 
     fn access_impl<S>(storage: S) -> ItemAccess<E, T, S> {
         ItemAccess {
@@ -91,6 +87,17 @@ where
             phantom: PhantomData,
         }
     }
+}
+
+impl<T, E> IterableStorable for Item<T, E>
+where
+    E: Encoding,
+    T: EncodableWith<E> + DecodableWith<E>,
+{
+    type Key = ();
+    type KeyDecodeError = ItemKeyDecodeError;
+    type Value = T;
+    type ValueDecodeError = E::DecodeError;
 
     fn decode_key(key: &[u8]) -> Result<(), ItemKeyDecodeError> {
         if key.is_empty() {
@@ -100,7 +107,7 @@ where
         }
     }
 
-    fn decode_value(value: &[u8]) -> Result<Self::Value, Self::ValueDecodeError> {
+    fn decode_value(value: &[u8]) -> Result<T, E::DecodeError> {
         T::decode(value)
     }
 }

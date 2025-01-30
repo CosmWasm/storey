@@ -1,3 +1,6 @@
 lcov.info
 /target
 /Cargo.lock
+dodo.py
+.doit.db*
+__pycache__

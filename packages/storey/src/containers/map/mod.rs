@@ -1,6 +1,7 @@
 pub mod key;
 mod key_encoding;
 
+use key::DefaultKeySet;
 pub use key::{Key, OwnedKey};
 use key_encoding::KeyEncoding;
 use key_encoding::KeyEncodingT;
@@ -15,6 +16,7 @@ use self::key::FixedSizeKey;
 use super::BoundFor;
 use super::BoundedIterableAccessor;
 use super::IterableAccessor;
+use super::IterableStorable;
 use super::NonTerminal;
 use super::Storable;
 use super::Terminal;
@@ -25,6 +27,16 @@ use super::Terminal;
 ///
 /// A map does not directly manage the storage of its values. Instead, it doles out access to
 /// a collection of other containers.
+///
+/// # Key sets
+///
+/// The `KS` type parameter is the "key set" used. This is a marker type that
+/// specifies the kind of keys that can be used with the map. The default key
+/// set is [`DefaultKeySet`]. Providing another key set is an extension mechanism -
+/// third party crates can define their own key set types to support third-party key types,
+/// without bumping into orphan rules.
+///
+/// An example of a custom key set implementation is shown in the [`Key`] trait documentation.
 ///
 /// # Examples
 ///
@@ -55,18 +67,12 @@ use super::Terminal;
 /// assert_eq!(access.entry("foo").entry("bar").get().unwrap(), Some(1337));
 /// assert_eq!(access.entry("foo").entry("baz").get().unwrap(), None);
 /// ```
-pub struct Map<K: ?Sized, V> {
+pub struct Map<K: ?Sized, V, KS = DefaultKeySet> {
     prefix: u8,
-    phantom: PhantomData<(*const K, V)>,
+    phantom: PhantomData<(*const K, V, KS)>,
 }
 
-impl<K, V> Map<K, V>
-where
-    K: OwnedKey,
-    V: Storable,
-    <V as Storable>::KeyDecodeError: std::fmt::Display,
-    (K::Kind, V::Kind): KeyEncodingT,
-{
+impl<K, V, KS> Map<K, V, KS> {
     /// Creates a new map with the given prefix.
     ///
     /// It is the responsibility of the caller to ensure that the prefix is unique and does not conflict
@@ -98,7 +104,7 @@ where
     /// let map = Map::<String, Item<u64, TestEncoding>>::new(0);
     /// let mut access = map.access(&mut storage);
     /// ```
-    pub fn access<F, S>(&self, storage: F) -> MapAccess<K, V, StorageBranch<S>>
+    pub fn access<F, S>(&self, storage: F) -> MapAccess<K, V, StorageBranch<S>, KS>
     where
         (F,): IntoStorage<S>,
     {
@@ -108,26 +114,29 @@ where
     }
 }
 
-impl<K, V> Storable for Map<K, V>
-where
-    K: OwnedKey,
-    V: Storable,
-    <V as Storable>::KeyDecodeError: std::fmt::Display,
-    (K::Kind, V::Kind): KeyEncodingT,
-{
+impl<K, V, KS> Storable for Map<K, V, KS> {
     type Kind = NonTerminal;
-    type Accessor<S> = MapAccess<K, V, S>;
-    type Key = (K, V::Key);
-    type KeyDecodeError = MapKeyDecodeError<V::KeyDecodeError>;
-    type Value = V::Value;
-    type ValueDecodeError = V::ValueDecodeError;
+    type Accessor<S> = MapAccess<K, V, S, KS>;
 
-    fn access_impl<S>(storage: S) -> MapAccess<K, V, S> {
+    fn access_impl<S>(storage: S) -> MapAccess<K, V, S, KS> {
         MapAccess {
             storage,
             phantom: PhantomData,
         }
     }
+}
+
+impl<K, V, KS> IterableStorable for Map<K, V, KS>
+where
+    K: OwnedKey<KS>,
+    V: IterableStorable,
+    <V as IterableStorable>::KeyDecodeError: std::fmt::Display,
+    (K::Kind, V::Kind): KeyEncodingT,
+{
+    type Key = (K, V::Key);
+    type KeyDecodeError = MapKeyDecodeError<V::KeyDecodeError>;
+    type Value = V::Value;
+    type ValueDecodeError = V::ValueDecodeError;
 
     fn decode_key(key: &[u8]) -> Result<Self::Key, MapKeyDecodeError<V::KeyDecodeError>> {
         let behavior = <(K::Kind, V::Kind)>::BEHAVIOR;
@@ -188,14 +197,14 @@ impl<I: std::fmt::Display> crate::error::StoreyError for MapKeyDecodeError<I> {}
 /// An accessor for a map.
 ///
 /// The accessor provides methods for interacting with the map in storage.
-pub struct MapAccess<K: ?Sized, V, S> {
+pub struct MapAccess<K: ?Sized, V, S, KS = DefaultKeySet> {
     storage: S,
-    phantom: PhantomData<(*const K, V)>,
+    phantom: PhantomData<(*const K, V, KS)>,
 }
 
-impl<K, V, S> MapAccess<K, V, S>
+impl<K, V, S, KS> MapAccess<K, V, S, KS>
 where
-    K: Key,
+    K: Key<KS>,
     V: Storable,
     (K::Kind, V::Kind): KeyEncodingT,
 {
@@ -229,7 +238,7 @@ where
     pub fn entry<Q>(&self, key: &Q) -> V::Accessor<StorageBranch<&S>>
     where
         K: Borrow<Q>,
-        Q: Key<Kind = K::Kind> + ?Sized,
+        Q: Key<KS, Kind = K::Kind> + ?Sized,
     {
         let behavior = <(K::Kind, V::Kind)>::BEHAVIOR;
 
@@ -273,7 +282,7 @@ where
     pub fn entry_mut<Q>(&mut self, key: &Q) -> V::Accessor<StorageBranch<&mut S>>
     where
         K: Borrow<Q>,
-        Q: Key<Kind = K::Kind> + ?Sized,
+        Q: Key<KS, Kind = K::Kind> + ?Sized,
     {
         let behavior = <(K::Kind, V::Kind)>::BEHAVIOR;
 
@@ -294,11 +303,11 @@ fn len_prefix<T: AsRef<[u8]>>(bytes: T) -> Vec<u8> {
     result
 }
 
-impl<K, V, S> IterableAccessor for MapAccess<K, V, S>
+impl<K, V, S, KS> IterableAccessor for MapAccess<K, V, S, KS>
 where
-    K: OwnedKey,
-    V: Storable,
-    <V as Storable>::KeyDecodeError: std::fmt::Display,
+    K: OwnedKey<KS>,
+    V: IterableStorable,
+    <V as IterableStorable>::KeyDecodeError: std::fmt::Display,
     S: IterableStorage,
     (K::Kind, V::Kind): KeyEncodingT,
 {
@@ -317,11 +326,11 @@ where
 // after it, we have to length-prefix the key. This makes bounded iteration behave differently
 // than in other cases (and rather unintuitively).
 
-impl<K, V, S> BoundedIterableAccessor for MapAccess<K, V, S>
+impl<K, V, S, KS> BoundedIterableAccessor for MapAccess<K, V, S, KS>
 where
-    K: OwnedKey,
-    V: Storable,
-    <V as Storable>::KeyDecodeError: std::fmt::Display,
+    K: OwnedKey<KS>,
+    V: IterableStorable,
+    <V as IterableStorable>::KeyDecodeError: std::fmt::Display,
     S: IterableStorage,
     (K::Kind, V::Kind): BoundedIterationAllowed + KeyEncodingT,
 {
@@ -333,11 +342,11 @@ impl<const L: usize> BoundedIterationAllowed for (FixedSizeKey<L>, Terminal) {}
 impl<const L: usize> BoundedIterationAllowed for (FixedSizeKey<L>, NonTerminal) {}
 impl BoundedIterationAllowed for (DynamicKey, Terminal) {}
 
-impl<K, V, Q> BoundFor<Map<K, V>> for &Q
+impl<K, V, Q, KS> BoundFor<Map<K, V, KS>> for &Q
 where
-    K: Borrow<Q> + OwnedKey,
+    K: Borrow<Q> + OwnedKey<KS>,
     V: Storable,
-    Q: Key + ?Sized,
+    Q: Key<KS> + ?Sized,
     (K::Kind, V::Kind): KeyEncodingT,
 {
     fn into_bytes(self) -> Vec<u8> {

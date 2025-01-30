@@ -9,7 +9,9 @@ use crate::storage::{IterableStorage, StorageBranch};
 use crate::storage::{Storage, StorageMut};
 
 use super::common::TryGetError;
-use super::{BoundFor, BoundedIterableAccessor, IterableAccessor, NonTerminal, Storable};
+use super::{
+    BoundFor, BoundedIterableAccessor, IterableAccessor, IterableStorable, NonTerminal, Storable,
+};
 
 /// The first (lowest) ID that is pushed to the column.
 const FIRST_ID: u32 = 1;
@@ -97,24 +99,15 @@ where
     }
 }
 
-impl<T, E> Storable for Column<T, E>
+impl<T, E> IterableStorable for Column<T, E>
 where
     E: Encoding,
     T: EncodableWith<E> + DecodableWith<E>,
 {
-    type Kind = NonTerminal;
-    type Accessor<S> = ColumnAccess<E, T, S>;
     type Key = u32;
     type KeyDecodeError = ColumnIdDecodeError;
     type Value = T;
     type ValueDecodeError = E::DecodeError;
-
-    fn access_impl<S>(storage: S) -> ColumnAccess<E, T, S> {
-        ColumnAccess {
-            storage,
-            phantom: PhantomData,
-        }
-    }
 
     fn decode_key(key: &[u8]) -> Result<Self::Key, ColumnIdDecodeError> {
         let key = decode_id(key)?;
@@ -124,6 +117,22 @@ where
 
     fn decode_value(value: &[u8]) -> Result<Self::Value, Self::ValueDecodeError> {
         T::decode(value)
+    }
+}
+
+impl<T, E> Storable for Column<T, E>
+where
+    E: Encoding,
+    T: EncodableWith<E> + DecodableWith<E>,
+{
+    type Kind = NonTerminal;
+    type Accessor<S> = ColumnAccess<E, T, S>;
+
+    fn access_impl<S>(storage: S) -> ColumnAccess<E, T, S> {
+        ColumnAccess {
+            storage,
+            phantom: PhantomData,
+        }
     }
 }
 

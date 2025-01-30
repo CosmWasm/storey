@@ -1,22 +1,6 @@
-/// A key that can be used with a [`Map`](super::Map).
-pub trait Key {
-    /// The kind of key, meaning either fixed size or dynamic size.
-    type Kind: KeyKind;
+//! Implementations of the `Key`/`OwnedKey` trait for Rust std types.
 
-    /// Encode the key into a byte vector.
-    fn encode(&self) -> Vec<u8>;
-}
-
-/// An owned key that can be used with a [`Map`](super::Map).
-pub trait OwnedKey: Key {
-    /// The error type that can occur when decoding the key.
-    type Error;
-
-    /// Decode the key from a byte slice.
-    fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error>
-    where
-        Self: Sized;
-}
+use super::{DynamicKey, FixedSizeKey, Key, OwnedKey};
 
 impl Key for String {
     type Kind = DynamicKey;
@@ -155,31 +139,6 @@ impl<const N: usize> OwnedKey for [u8; N] {
     }
 }
 
-/// A trait specifying the kind of key.
-///
-/// There are two kinds of keys: fixed-size keys and dynamic keys, which are
-/// represented by the [`FixedSizeKey`] and [`DynamicKey`] types, respectively.
-///
-/// This trait is [sealed](https://rust-lang.github.io/api-guidelines/future-proofing.html#sealed-traits)
-/// and cannot be implemented outside of this crate.
-pub trait KeyKind: sealed::KeyKindSeal {}
-
-/// A marker type representing a fixed-size key.
-pub struct FixedSizeKey<const L: usize>;
-
-/// A marker type representing a dynamic-size key.
-pub struct DynamicKey;
-
-impl<const L: usize> KeyKind for FixedSizeKey<L> {}
-impl KeyKind for DynamicKey {}
-
-mod sealed {
-    pub trait KeyKindSeal {}
-
-    impl<const L: usize> KeyKindSeal for super::FixedSizeKey<L> {}
-    impl KeyKindSeal for super::DynamicKey {}
-}
-
 /// An error type for decoding numeric keys.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, thiserror::Error)]
 pub enum NumericKeyDecodeError {
@@ -254,39 +213,3 @@ macro_rules! impl_key_for_signed {
 }
 
 impl_key_for_signed!(i8 : u8, i16 : u16, i32 : u32, i64 : u64, i128 : u128);
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn signed_int_ordering() {
-        let data = [-555555555, -3333, -1, 0, 1, 3333, 55555555];
-
-        let mut encoded = data.iter().map(|&x| x.encode()).collect::<Vec<_>>();
-        encoded.sort();
-
-        let decoded = encoded
-            .iter()
-            .map(|x| i32::from_bytes(x).unwrap())
-            .collect::<Vec<_>>();
-
-        assert_eq!(&data[..], &decoded);
-    }
-
-    #[test]
-    fn signed_int_encoding() {
-        // negative values have the leftmost bit unset
-        assert_eq!((i32::MIN).encode(), [0b00000000, 0x00, 0x00, 0x00]);
-        assert_eq!((-2000i32).encode(), [0b01111111, 0xff, 248, 48]);
-        assert_eq!((-3i32).encode(), [0b01111111, 0xff, 0xff, 0xfd]);
-        assert_eq!((-2i32).encode(), [0b01111111, 0xff, 0xff, 0xfe]);
-        assert_eq!((-1i32).encode(), [0b01111111, 0xff, 0xff, 0xff]);
-
-        // non-negative values are BE encoded, but with the leftmost bit set
-        assert_eq!(0i32.encode(), [0b10000000, 0x00, 0x00, 0x00]);
-        assert_eq!(1i32.encode(), [0b10000000, 0x00, 0x00, 0x01]);
-        assert_eq!(2i32.encode(), [0b10000000, 0x00, 0x00, 0x02]);
-        assert_eq!(i32::MAX.encode(), [0b11111111, 0xff, 0xff, 0xff]);
-    }
-}

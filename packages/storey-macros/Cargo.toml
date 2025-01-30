@@ -1,0 +1,19 @@
+[package]
+name = "storey-macros"
+version = "0.1.0"
+edition = "2021"
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+categories.workspace = true
+keywords.workspace = true
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1"
+proc-macro-error = "1"
+syn = { version = "2", features = ["full"] }
+quote = "1"
