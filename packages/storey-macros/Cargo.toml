@@ -1,5 +1,6 @@
 [package]
 name = "storey-macros"
+description = "Macros for the storey crate"
 version = "0.1.0"
 edition = "2021"
 authors.workspace = true
