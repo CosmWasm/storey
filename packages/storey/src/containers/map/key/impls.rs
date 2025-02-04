@@ -1,4 +1,9 @@
 //! Implementations of the `Key`/`OwnedKey` trait for Rust std types.
+//!
+//! If adding a new implementation here, please also add a delegation
+//! to the `key_set` module in `storey-macros`. This ensures consumers
+//! of the `KeySetDefaults` derive macro can use the new types without
+//! having to manually implement the `Key` trait themselves.
 
 use super::{DynamicKey, FixedSizeKey, Key, OwnedKey};
 
