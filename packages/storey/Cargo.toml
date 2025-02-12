@@ -2,7 +2,7 @@
 name = "storey"
 description = "Storage abstractions for blockchains"
 readme = "../../README.md"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 rust-version = "1.77"
 authors.workspace = true

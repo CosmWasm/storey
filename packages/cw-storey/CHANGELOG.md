@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+## [0.4.1] - 2025-02-05
+
+
+### Added
+- add the `KeySetDefaults` derive
+- make Map keys extendable
+- improve access API to root containers
+- easy conversion to cosmwasm_std::StdError
+
+### Fixed
+- use msgpack impl provided by cosmwasm_std
+
+### Tests
+- have cw_storey smoke tests use mock cw contract
 
 ## [0.4.0] - 2024-09-11
 
