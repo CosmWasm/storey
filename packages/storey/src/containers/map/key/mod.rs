@@ -3,18 +3,8 @@ mod key_set;
 mod kind;
 
 pub use impls::{ArrayDecodeError, InvalidUtf8, NumericKeyDecodeError};
-pub use key_set::DefaultKeySet;
+pub use key_set::{DefaultKeySet, KeySet};
 pub use kind::{DynamicKey, FixedSizeKey, KeyKind};
-
-/// When applied to a type `KS`, this derive macro generates implementations of the [`Key<KS>`]
-/// and [`OwnedKey<KS>`] traits for appropriate Rust std types. This mirrors the implementations
-/// that exist for [`Key<DefaultKeySet>`](Key#foreign-impls) and [`OwnedKey<DefaultKeySet>`](OwnedKey#foreign-impls).
-///
-/// The purpose is to allow third-party crates to define their own key set types without
-/// reinventing the wheel for the standard library types.
-///
-/// More about key sets can be found in the [`Key`] trait documentation.
-pub use storey_macros::KeySetDefaults;
 
 /// A key that can be used with a [`Map`](super::Map).
 ///
@@ -112,12 +102,15 @@ mod tests {
     fn signed_int_ordering() {
         let data = [-555555555, -3333, -1, 0, 1, 3333, 55555555];
 
-        let mut encoded = data.iter().map(|&x| x.encode()).collect::<Vec<_>>();
+        let mut encoded = data
+            .iter()
+            .map(|&x| Key::<DefaultKeySet>::encode(&x))
+            .collect::<Vec<_>>();
         encoded.sort();
 
         let decoded = encoded
             .iter()
-            .map(|x| i32::from_bytes(x).unwrap())
+            .map(|x| <i32 as OwnedKey<DefaultKeySet>>::from_bytes(x).unwrap())
             .collect::<Vec<_>>();
 
         assert_eq!(&data[..], &decoded);
@@ -126,16 +119,43 @@ mod tests {
     #[test]
     fn signed_int_encoding() {
         // negative values have the leftmost bit unset
-        assert_eq!((i32::MIN).encode(), [0b00000000, 0x00, 0x00, 0x00]);
-        assert_eq!((-2000i32).encode(), [0b01111111, 0xff, 248, 48]);
-        assert_eq!((-3i32).encode(), [0b01111111, 0xff, 0xff, 0xfd]);
-        assert_eq!((-2i32).encode(), [0b01111111, 0xff, 0xff, 0xfe]);
-        assert_eq!((-1i32).encode(), [0b01111111, 0xff, 0xff, 0xff]);
+        assert_eq!(
+            Key::<DefaultKeySet>::encode(&i32::MIN),
+            [0b00000000, 0x00, 0x00, 0x00]
+        );
+        assert_eq!(
+            Key::<DefaultKeySet>::encode(&-2000i32),
+            [0b01111111, 0xff, 248, 48]
+        );
+        assert_eq!(
+            Key::<DefaultKeySet>::encode(&-3i32),
+            [0b01111111, 0xff, 0xff, 0xfd]
+        );
+        assert_eq!(
+            Key::<DefaultKeySet>::encode(&-2i32),
+            [0b01111111, 0xff, 0xff, 0xfe]
+        );
+        assert_eq!(
+            Key::<DefaultKeySet>::encode(&-1i32),
+            [0b01111111, 0xff, 0xff, 0xff]
+        );
 
         // non-negative values are BE encoded, but with the leftmost bit set
-        assert_eq!(0i32.encode(), [0b10000000, 0x00, 0x00, 0x00]);
-        assert_eq!(1i32.encode(), [0b10000000, 0x00, 0x00, 0x01]);
-        assert_eq!(2i32.encode(), [0b10000000, 0x00, 0x00, 0x02]);
-        assert_eq!(i32::MAX.encode(), [0b11111111, 0xff, 0xff, 0xff]);
+        assert_eq!(
+            Key::<DefaultKeySet>::encode(&0i32),
+            [0b10000000, 0x00, 0x00, 0x00]
+        );
+        assert_eq!(
+            Key::<DefaultKeySet>::encode(&1i32),
+            [0b10000000, 0x00, 0x00, 0x01]
+        );
+        assert_eq!(
+            Key::<DefaultKeySet>::encode(&2i32),
+            [0b10000000, 0x00, 0x00, 0x02]
+        );
+        assert_eq!(
+            Key::<DefaultKeySet>::encode(&i32::MAX),
+            [0b11111111, 0xff, 0xff, 0xff]
+        );
     }
 }

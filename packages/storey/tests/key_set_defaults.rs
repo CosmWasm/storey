@@ -1,7 +1,8 @@
-use storey::containers::map::key::{Key, KeySetDefaults, OwnedKey};
+use storey::containers::map::key::KeySet;
 
-#[derive(KeySetDefaults)]
 pub struct MyKeySet;
+
+impl KeySet for MyKeySet {}
 
 #[test]
 fn strings() {

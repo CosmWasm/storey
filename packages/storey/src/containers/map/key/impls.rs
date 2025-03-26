@@ -5,9 +5,9 @@
 //! of the `KeySetDefaults` derive macro can use the new types without
 //! having to manually implement the `Key` trait themselves.
 
-use super::{DynamicKey, FixedSizeKey, Key, OwnedKey};
+use super::{key_set::KeySet, DynamicKey, FixedSizeKey, Key, OwnedKey};
 
-impl Key for String {
+impl<KS: KeySet> Key<KS> for String {
     type Kind = DynamicKey;
 
     fn encode(&self) -> Vec<u8> {
@@ -15,7 +15,7 @@ impl Key for String {
     }
 }
 
-impl Key for Box<str> {
+impl<KS: KeySet> Key<KS> for Box<str> {
     type Kind = DynamicKey;
 
     fn encode(&self) -> Vec<u8> {
@@ -23,7 +23,7 @@ impl Key for Box<str> {
     }
 }
 
-impl Key for str {
+impl<KS: KeySet> Key<KS> for str {
     type Kind = DynamicKey;
 
     fn encode(&self) -> Vec<u8> {
@@ -38,7 +38,7 @@ pub struct InvalidUtf8;
 
 impl crate::error::StoreyError for InvalidUtf8 {}
 
-impl OwnedKey for String {
+impl<KS: KeySet> OwnedKey<KS> for String {
     type Error = InvalidUtf8;
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error>
@@ -51,7 +51,7 @@ impl OwnedKey for String {
     }
 }
 
-impl OwnedKey for Box<str> {
+impl<KS: KeySet> OwnedKey<KS> for Box<str> {
     type Error = InvalidUtf8;
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error>
@@ -64,7 +64,7 @@ impl OwnedKey for Box<str> {
     }
 }
 
-impl Key for Vec<u8> {
+impl<KS: KeySet> Key<KS> for Vec<u8> {
     type Kind = DynamicKey;
 
     fn encode(&self) -> Vec<u8> {
@@ -72,7 +72,7 @@ impl Key for Vec<u8> {
     }
 }
 
-impl Key for Box<[u8]> {
+impl<KS: KeySet> Key<KS> for Box<[u8]> {
     type Kind = DynamicKey;
 
     fn encode(&self) -> Vec<u8> {
@@ -80,7 +80,7 @@ impl Key for Box<[u8]> {
     }
 }
 
-impl Key for [u8] {
+impl<KS: KeySet> Key<KS> for [u8] {
     type Kind = DynamicKey;
 
     fn encode(&self) -> Vec<u8> {
@@ -88,7 +88,7 @@ impl Key for [u8] {
     }
 }
 
-impl<const N: usize> Key for [u8; N] {
+impl<KS: KeySet, const N: usize> Key<KS> for [u8; N] {
     type Kind = FixedSizeKey<N>;
 
     fn encode(&self) -> Vec<u8> {
@@ -96,7 +96,7 @@ impl<const N: usize> Key for [u8; N] {
     }
 }
 
-impl OwnedKey for Vec<u8> {
+impl<KS: KeySet> OwnedKey<KS> for Vec<u8> {
     type Error = ();
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error>
@@ -107,7 +107,7 @@ impl OwnedKey for Vec<u8> {
     }
 }
 
-impl OwnedKey for Box<[u8]> {
+impl<KS: KeySet> OwnedKey<KS> for Box<[u8]> {
     type Error = ();
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error>
@@ -127,7 +127,7 @@ pub enum ArrayDecodeError {
 
 impl crate::error::StoreyError for ArrayDecodeError {}
 
-impl<const N: usize> OwnedKey for [u8; N] {
+impl<KS: KeySet, const N: usize> OwnedKey<KS> for [u8; N] {
     type Error = ArrayDecodeError;
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error>
@@ -156,7 +156,7 @@ impl crate::error::StoreyError for NumericKeyDecodeError {}
 macro_rules! impl_key_for_numeric {
     ($($t:ty),*) => {
         $(
-            impl Key for $t {
+            impl<KS: KeySet> Key<KS> for $t {
                 type Kind = FixedSizeKey<{(Self::BITS / 8) as usize}>;
 
                 fn encode(&self) -> Vec<u8> {
@@ -164,7 +164,7 @@ macro_rules! impl_key_for_numeric {
                 }
             }
 
-            impl OwnedKey for $t {
+            impl<KS: KeySet> OwnedKey<KS> for $t {
                 type Error = NumericKeyDecodeError;
 
                 fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error>
@@ -189,7 +189,7 @@ impl_key_for_numeric!(u8, u16, u32, u64, u128);
 macro_rules! impl_key_for_signed {
     ($($t:ty : $ut:ty),*) => {
         $(
-            impl Key for $t {
+            impl<KS: KeySet> Key<KS> for $t {
                 type Kind = FixedSizeKey<{(Self::BITS / 8) as usize}>;
 
                 fn encode(&self) -> Vec<u8> {
@@ -197,7 +197,7 @@ macro_rules! impl_key_for_signed {
                 }
             }
 
-            impl OwnedKey for $t {
+            impl<KS: KeySet> OwnedKey<KS> for $t {
                 type Error = NumericKeyDecodeError;
 
                 fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error>
