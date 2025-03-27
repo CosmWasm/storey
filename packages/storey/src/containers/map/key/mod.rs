@@ -3,9 +3,10 @@ mod key_set;
 mod kind;
 
 pub use impls::{ArrayDecodeError, InvalidUtf8, NumericKeyDecodeError};
-pub use key_set::{DefaultKeySet, KeySet};
+pub use key_set::DefaultKeySet;
 pub use kind::{DynamicKey, FixedSizeKey, KeyKind};
 
+pub use storey_macros::Key;
 /// A key that can be used with a [`Map`](super::Map).
 ///
 /// # Key sets
@@ -30,19 +31,21 @@ pub use kind::{DynamicKey, FixedSizeKey, KeyKind};
 /// // imagine this is a third-party type
 /// pub struct ExtType;
 ///
-/// impl Key<MyKeySet> for String {
+/// pub struct MyKey(String);
+///
+/// impl Key<MyKeySet> for MyKey {
 ///     type Kind = DynamicKey;
 ///
 ///     fn encode(&self) -> Vec<u8> {
-///         self.as_bytes().to_vec()
+///         self.0.as_bytes().to_vec()
 ///     }
 /// }
 ///
-/// impl OwnedKey<MyKeySet> for String {
+/// impl OwnedKey<MyKeySet> for MyKey {
 ///     type Error = std::string::FromUtf8Error;
 ///
 ///     fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error> {
-///          String::from_utf8(bytes.to_vec())
+///          String::from_utf8(bytes.to_vec()).map(|s| MyKey(s))
 ///     }
 /// }
 ///

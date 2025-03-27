@@ -1,5 +1,5 @@
 use cosmwasm_std::{Addr, Int128, Int256, Int512, Int64, Uint128, Uint256, Uint512, Uint64};
-use storey::containers::map::key::{DynamicKey, FixedSizeKey, KeySet, NumericKeyDecodeError};
+use storey::containers::map::key::{DynamicKey, FixedSizeKey, NumericKeyDecodeError};
 use storey::containers::map::{Key, OwnedKey};
 
 /// The CosmWasm key set for use with storey's [`Map`](storey::containers::Map).
@@ -8,8 +8,6 @@ use storey::containers::map::{Key, OwnedKey};
 ///
 /// For more information about key sets, take a look at the [`storey::containers::map::Key`] trait.
 pub struct CwKeySet;
-
-impl KeySet for CwKeySet {}
 
 impl Key<CwKeySet> for Addr {
     type Kind = DynamicKey;

@@ -1,8 +1,4 @@
-use storey::containers::map::key::KeySet;
-
 pub struct MyKeySet;
-
-impl KeySet for MyKeySet {}
 
 #[test]
 fn strings() {
