@@ -4,7 +4,19 @@ mod key_derive;
 pub fn key_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = syn::parse_macro_input!(input as syn::ItemStruct);
 
-    let expanded = match key_derive::derive(input) {
+    let expanded = match key_derive::key_derive(input) {
+        Ok(res) => res,
+        Err(e) => e.into_compile_error(),
+    };
+
+    proc_macro::TokenStream::from(expanded)
+}
+
+#[proc_macro_derive(OwnedKey)]
+pub fn owned_key_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    let input = syn::parse_macro_input!(input as syn::ItemStruct);
+
+    let expanded = match key_derive::owned_key_derive(input) {
         Ok(res) => res,
         Err(e) => e.into_compile_error(),
     };

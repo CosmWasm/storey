@@ -1,8 +1,8 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{parse_quote, spanned::Spanned, Fields, Ident, ItemStruct};
+use syn::{Fields, ItemStruct};
 
-pub fn derive(input: ItemStruct) -> Result<TokenStream, syn::Error> {
+pub fn key_derive(input: ItemStruct) -> Result<TokenStream, syn::Error> {
     let name = &input.ident;
 
     let inner_type = extract_newtype(&input)?;
@@ -13,6 +13,22 @@ pub fn derive(input: ItemStruct) -> Result<TokenStream, syn::Error> {
 
             fn encode(&self) -> Vec<u8> {
                 ::storey::containers::map::Key::<KS>::encode(&self.0)
+            }
+        }
+    })
+}
+
+pub fn owned_key_derive(input: ItemStruct) -> Result<TokenStream, syn::Error> {
+    let name = &input.ident;
+
+    let inner_type = extract_newtype(&input)?;
+
+    Ok(quote! {
+        impl<KS> ::storey::containers::map::OwnedKey<KS> for #name {
+            type Error = <#inner_type as OwnedKey<KS>>::Error;
+
+            fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error> {
+                ::storey::containers::map::OwnedKey::<KS>::from_bytes(bytes).map(Self)
             }
         }
     })
