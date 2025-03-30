@@ -1,6 +1,3 @@
-use storey::containers::map::key::{Key, KeySetDefaults, OwnedKey};
-
-#[derive(KeySetDefaults)]
 pub struct MyKeySet;
 
 #[test]
