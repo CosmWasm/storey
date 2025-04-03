@@ -6,7 +6,13 @@ use storey::{
 use storey_macros::router;
 use storey_storage::IntoStorage;
 
-router!();
+router! {
+    router Foo {
+        0 -> a: Item<u64, TestEncoding>,
+        1 -> b: Map<String, Item<u64, TestEncoding>>,
+        2 -> c: Item<u64, TestEncoding>,
+    }
+}
 
 #[cfg(test)]
 mod tests {

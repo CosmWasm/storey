@@ -1,30 +1,56 @@
+mod field;
+mod fields;
+
+use fields::Fields;
 use proc_macro2::TokenStream;
+use quote::format_ident;
+use syn::{braced, parse::Parse};
 
 use super::def::{Field, RouterDef};
 
-pub fn parse(_input: TokenStream) -> Result<RouterDef, syn::Error> {
-    // mock implementation for testing!
+pub fn parse(input: TokenStream) -> Result<RouterDef, syn::Error> {
+    let input = syn::parse2::<Def>(input)?;
+    let accessor_name = format_ident!("{}Access", input.name);
+
+    let mut fields = Vec::new();
+    for field in input.fields.fields {
+        fields.push(Field {
+            key: field.key,
+            name: field.name,
+            ty: field.ty,
+        });
+    }
+
     Ok(RouterDef {
-        name: syn::Ident::new("Foo", proc_macro2::Span::call_site()),
-        accessor_name: syn::Ident::new("FooAccess", proc_macro2::Span::call_site()),
-        fields: vec![
-            Field {
-                ty: syn::parse_str("Item<u64, TestEncoding>").unwrap(),
-                name: syn::Ident::new("a", proc_macro2::Span::call_site()),
-                key: 0,
-            },
-            Field {
-                ty: syn::parse_str("Map<String, Item<u64, TestEncoding>>").unwrap(),
-                name: syn::Ident::new("b", proc_macro2::Span::call_site()),
-                key: 1,
-            },
-            Field {
-                ty: syn::parse_str("Item<u64, TestEncoding>").unwrap(),
-                name: syn::Ident::new("c", proc_macro2::Span::call_site()),
-                key: 2,
-            },
-        ],
+        name: input.name,
+        accessor_name,
+        fields,
     })
+}
+
+struct Def {
+    name: syn::Ident,
+    fields: Fields,
+}
+
+impl Parse for Def {
+    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        let router_keyword = input.parse::<syn::Ident>()?;
+        if router_keyword != "router" {
+            return Err(syn::Error::new(
+                router_keyword.span(),
+                "Expected `router` keyword",
+            ));
+        }
+
+        let name: syn::Ident = input.parse()?;
+
+        let fields;
+        braced!(fields in input);
+        let fields: Fields = fields.parse()?;
+
+        Ok(Def { name, fields })
+    }
 }
 
 #[cfg(test)]
