@@ -26,3 +26,45 @@ pub fn parse(_input: TokenStream) -> Result<RouterDef, syn::Error> {
         ],
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use quote::{quote, ToTokens as _};
+
+    #[test]
+    fn basic_parse() {
+        let input = quote! {
+            router Foo {
+                0 -> a: Item<u64, TestEncoding>,
+                1 -> b: Map<String, Item<u64, TestEncoding>>,
+                2 -> c: Item<u64, TestEncoding>,
+            }
+        };
+
+        let def = parse(input).unwrap();
+
+        assert_eq!(def.name.to_string(), "Foo");
+        assert_eq!(def.accessor_name.to_string(), "FooAccess");
+        assert_eq!(def.fields.len(), 3);
+        assert_eq!(def.fields[0].name.to_string(), "a");
+        assert_eq!(
+            def.fields[0].ty.to_token_stream().to_string(),
+            "Item < u64 , TestEncoding >"
+        );
+        assert_eq!(def.fields[0].key, 0);
+        assert_eq!(def.fields[1].name.to_string(), "b");
+        assert_eq!(
+            def.fields[1].ty.to_token_stream().to_string(),
+            "Map < String , Item < u64 , TestEncoding > >"
+        );
+        assert_eq!(def.fields[1].key, 1);
+        assert_eq!(def.fields[2].name.to_string(), "c");
+        assert_eq!(
+            def.fields[2].ty.to_token_stream().to_string(),
+            "Item < u64 , TestEncoding >"
+        );
+        assert_eq!(def.fields[2].key, 2);
+    }
+}
