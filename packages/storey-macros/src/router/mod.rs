@@ -13,9 +13,8 @@ mod gen;
 mod parse;
 
 use proc_macro2::TokenStream;
-use syn::ItemStruct;
 
-pub fn entry(input: ItemStruct) -> Result<TokenStream, syn::Error> {
+pub fn entry(input: TokenStream) -> Result<TokenStream, syn::Error> {
     let def = parse::parse(input)?;
 
     gen::gen(def)

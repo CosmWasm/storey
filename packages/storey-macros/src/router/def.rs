@@ -1,5 +1,6 @@
 pub struct RouterDef {
     pub name: syn::Ident,
+    pub accessor_name: syn::Ident,
     pub fields: Vec<Field>,
 }
 

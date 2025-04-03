@@ -3,11 +3,9 @@ mod router;
 
 use proc_macro::TokenStream;
 
-#[proc_macro_attribute]
-pub fn router(_attrs: TokenStream, input: TokenStream) -> TokenStream {
-    let input = syn::parse_macro_input!(input as syn::ItemStruct);
-
-    let expanded = match router::entry(input) {
+#[proc_macro]
+pub fn router(input: TokenStream) -> TokenStream {
+    let expanded = match router::entry(input.into()) {
         Ok(res) => res,
         Err(e) => e.into_compile_error(),
     };
