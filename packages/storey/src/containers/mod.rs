@@ -8,12 +8,15 @@ pub mod map;
 
 use std::{marker::PhantomData, ops::Bound};
 
-pub use column::{Column, ColumnAccess};
-pub use item::{Item, ItemAccess};
-pub use map::{Map, MapAccess};
 use storey_storage::RevIterableStorage;
 
 use crate::storage::IterableStorage;
+
+pub use storey_macros::router;
+
+pub use column::{Column, ColumnAccess};
+pub use item::{Item, ItemAccess};
+pub use map::{Map, MapAccess};
 
 /// The fundamental trait every collection/container should implement.
 pub trait Storable {
