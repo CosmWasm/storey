@@ -20,4 +20,5 @@ storey-macros.workspace = true
 storey-storage.workspace = true
 
 [dev-dependencies]
+trybuild = "1"
 mocks = { path = "../mocks" }
