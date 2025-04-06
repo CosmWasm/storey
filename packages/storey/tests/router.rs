@@ -1,10 +1,6 @@
 use mocks::encoding::TestEncoding;
-use storey::{
-    containers::{Item, Map, NonTerminal, Storable},
-    storage::StorageBranch,
-};
+use storey::containers::{Item, Map};
 use storey_macros::router;
-use storey_storage::IntoStorage;
 
 router! {
     router Foo {
