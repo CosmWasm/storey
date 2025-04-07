@@ -1,9 +1,11 @@
+use proc_macro2::Span;
 use syn::parse::Parse;
 
 pub struct Field {
     pub ty: syn::Type,
     pub name: syn::Ident,
     pub key: u8,
+    pub key_span: Span,
 }
 
 impl Parse for Field {
@@ -18,6 +20,7 @@ impl Parse for Field {
             ty,
             name,
             key: key.base10_parse()?,
+            key_span: key.span(),
         })
     }
 }

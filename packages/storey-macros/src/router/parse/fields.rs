@@ -1,3 +1,5 @@
+use std::collections::{HashSet, VecDeque};
+
 use syn::parse::Parse;
 
 use super::field::Field;
@@ -12,13 +14,57 @@ impl Parse for Fields {
 
         while !input.is_empty() {
             let field: Field = input.parse()?;
+
             fields.push(field);
             if input.peek(syn::Token![,]) {
                 input.parse::<syn::Token![,]>()?;
             }
         }
 
+        validate_fields(fields.as_slice())?;
+
         Ok(Fields { fields })
+    }
+}
+
+fn validate_fields(fields: &[Field]) -> syn::Result<()> {
+    let mut names = HashSet::new();
+    let mut keys = HashSet::new();
+    let mut errors = VecDeque::new();
+
+    for field in fields {
+        if names.contains(&field.name) {
+            errors.push_back(syn::Error::new(
+                field.name.span(),
+                format!("Duplicate field name: {}", field.name),
+            ));
+        }
+
+        if keys.contains(&field.key) {
+            errors.push_back(syn::Error::new(
+                field.key_span,
+                format!("Duplicate field key: {}", field.key),
+            ));
+        }
+
+        if field.key == 255 {
+            errors.push_back(syn::Error::new(
+                field.key_span,
+                "Key 255 is reserved for metadata",
+            ));
+        }
+
+        names.insert(field.name.clone());
+        keys.insert(field.key);
+    }
+
+    if !errors.is_empty() {
+        let mut combined_error = errors.pop_front().unwrap();
+        combined_error.extend(errors);
+
+        Err(combined_error)
+    } else {
+        Ok(())
     }
 }
 
