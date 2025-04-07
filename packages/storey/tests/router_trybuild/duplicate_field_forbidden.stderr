@@ -1,0 +1,25 @@
+error: Duplicate field name: a
+ --> tests/router_trybuild/duplicate_field_forbidden.rs:8:14
+  |
+8 |         2 -> a: Item<u64, TestEncoding>,
+  |              ^
+
+error: Duplicate field name: a
+ --> tests/router_trybuild/duplicate_field_forbidden.rs:9:14
+  |
+9 |         5 -> a: Item<u64, TestEncoding>,
+  |              ^
+
+warning: unused import: `mocks::encoding::TestEncoding`
+ --> tests/router_trybuild/duplicate_field_forbidden.rs:1:5
+  |
+1 | use mocks::encoding::TestEncoding;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: unused imports: `Item` and `Map`
+ --> tests/router_trybuild/duplicate_field_forbidden.rs:2:34
+  |
+2 | use storey::containers::{router, Item, Map};
+  |                                  ^^^^  ^^^

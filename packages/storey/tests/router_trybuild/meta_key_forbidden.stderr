@@ -1,0 +1,19 @@
+error: Key 255 is reserved for metadata
+ --> tests/router_trybuild/meta_key_forbidden.rs:8:9
+  |
+8 |         255 -> c: Item<u64, TestEncoding>,
+  |         ^^^
+
+warning: unused import: `mocks::encoding::TestEncoding`
+ --> tests/router_trybuild/meta_key_forbidden.rs:1:5
+  |
+1 | use mocks::encoding::TestEncoding;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: unused imports: `Item` and `Map`
+ --> tests/router_trybuild/meta_key_forbidden.rs:2:34
+  |
+2 | use storey::containers::{router, Item, Map};
+  |                                  ^^^^  ^^^

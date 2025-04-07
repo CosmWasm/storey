@@ -44,4 +44,10 @@ mod tests {
         assert_eq!(map.access(&storage).entry(&0).a().get().unwrap(), Some(5));
         assert_eq!(map.access(&storage).entry(&1).a().get().unwrap(), None);
     }
+
+    #[test]
+    fn trybuild() {
+        let t = trybuild::TestCases::new();
+        t.compile_fail("tests/router_trybuild/*.rs");
+    }
 }
