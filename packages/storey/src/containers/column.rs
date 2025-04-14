@@ -1,11 +1,10 @@
 use std::marker::PhantomData;
 
-use storey_storage::IntoStorage;
 use thiserror::Error;
 
 use crate::encoding::Encoding;
 use crate::encoding::{DecodableWith, EncodableWith};
-use crate::storage::{IterableStorage, StorageBranch};
+use crate::storage::IterableStorage;
 use crate::storage::{Storage, StorageMut};
 
 use super::common::TryGetError;
@@ -35,68 +34,24 @@ mod meta_keys {
 /// ```
 /// # use mocks::encoding::TestEncoding;
 /// # use mocks::backend::TestStorage;
-/// use storey::containers::Column;
+/// use storey::containers::{Column, router};
+/// # let mut storage = TestStorage::new();
 ///
-/// let mut storage = TestStorage::new();
-/// let column = Column::<u64, TestEncoding>::new(0);
-/// let mut access = column.access(&mut storage);
+/// router! {
+///     router Root {
+///         0 -> column: Column<u64, TestEncoding>,
+///     }
+/// }
 ///
-/// access.push(&1337).unwrap();
-/// access.push(&42).unwrap();
+/// Root::access(&mut storage).column_mut().push(&1337).unwrap();
+/// Root::access(&mut storage).column_mut().push(&42).unwrap();
 ///
-/// assert_eq!(access.get(1).unwrap(), Some(1337));
-/// assert_eq!(access.get(2).unwrap(), Some(42));
-/// assert_eq!(access.get(3).unwrap(), None);
+/// assert_eq!(Root::access(&storage).column().get(1).unwrap(), Some(1337));
+/// assert_eq!(Root::access(&storage).column().get(2).unwrap(), Some(42));
+/// assert_eq!(Root::access(&storage).column().get(3).unwrap(), None);
 /// ```
 pub struct Column<T, E> {
-    prefix: u8,
     phantom: PhantomData<(T, E)>,
-}
-
-impl<T, E> Column<T, E>
-where
-    E: Encoding,
-    T: EncodableWith<E> + DecodableWith<E>,
-{
-    /// Create a new column associated with the given storage prefix.
-    ///
-    /// It is the responsibility of the user to ensure the prefix is unique and does not conflict
-    /// with other keys in the storage.
-    ///
-    /// The key provided here is used as a prefix for all keys the column itself might generate.
-    pub const fn new(prefix: u8) -> Self {
-        Self {
-            prefix,
-            phantom: PhantomData,
-        }
-    }
-
-    /// Acquire an accessor for this column.
-    ///
-    /// # Example
-    /// ```
-    /// # use mocks::encoding::TestEncoding;
-    /// # use mocks::backend::TestStorage;
-    /// use storey::containers::Column;
-    ///
-    /// // immutable accessor
-    /// let storage = TestStorage::new();
-    /// let column = Column::<u64, TestEncoding>::new(0);
-    /// let access = column.access(&storage);
-    ///
-    /// // mutable accessor
-    /// let mut storage = TestStorage::new();
-    /// let column = Column::<u64, TestEncoding>::new(0);
-    /// let mut access = column.access(&mut storage);
-    /// ```
-    pub fn access<F, S>(&self, storage: F) -> ColumnAccess<E, T, StorageBranch<S>>
-    where
-        (F,): IntoStorage<S>,
-    {
-        let storage = (storage,).into_storage();
-
-        Self::access_impl(StorageBranch::new(storage, vec![self.prefix]))
-    }
 }
 
 impl<T, E> IterableStorable for Column<T, E>
@@ -190,15 +145,18 @@ where
     /// ```
     /// # use mocks::encoding::TestEncoding;
     /// # use mocks::backend::TestStorage;
-    /// use storey::containers::Column;
+    /// use storey::containers::{Column, router};
+    /// # let mut storage = TestStorage::new();
     ///
-    /// let mut storage = TestStorage::new();
-    /// let column = Column::<u64, TestEncoding>::new(0);
-    /// let mut access = column.access(&mut storage);
+    /// router! {
+    ///     router Root {
+    ///         0 -> column: Column<u64, TestEncoding>,
+    ///     }
+    /// }
     ///
-    /// access.push(&1337).unwrap();
-    /// assert_eq!(access.get(1).unwrap(), Some(1337));
-    /// assert_eq!(access.get(2).unwrap(), None);
+    /// Root::access(&mut storage).column_mut().push(&1337).unwrap();
+    /// assert_eq!(Root::access(&storage).column().get(1).unwrap(), Some(1337));
+    /// assert_eq!(Root::access(&storage).column().get(2).unwrap(), None);
     /// ```
     pub fn get(&self, id: u32) -> Result<Option<T>, E::DecodeError> {
         self.storage
@@ -220,15 +178,18 @@ where
     /// ```
     /// # use mocks::encoding::TestEncoding;
     /// # use mocks::backend::TestStorage;
-    /// use storey::containers::Column;
+    /// use storey::containers::{Column, router};
+    /// # let mut storage = TestStorage::new();
     ///
-    /// let mut storage = TestStorage::new();
-    /// let column = Column::<u64, TestEncoding>::new(0);
-    /// let mut access = column.access(&mut storage);
+    /// router! {
+    ///     router Root {
+    ///         0 -> column: Column<u64, TestEncoding>,
+    ///     }
+    /// }
     ///
-    /// access.push(&1337).unwrap();
-    /// assert_eq!(access.try_get(1).unwrap(), 1337);
-    /// assert!(access.try_get(2).is_err());
+    /// Root::access(&mut storage).column_mut().push(&1337).unwrap();
+    /// assert_eq!(Root::access(&storage).column().try_get(1).unwrap(), 1337);
+    /// assert!(Root::access(&storage).column().try_get(2).is_err());
     /// ```
     pub fn try_get(&self, id: u32) -> Result<T, TryGetError<E::DecodeError>> {
         self.get(id)?.ok_or(TryGetError::Empty)
@@ -242,15 +203,18 @@ where
     /// ```
     /// # use mocks::encoding::TestEncoding;
     /// # use mocks::backend::TestStorage;
-    /// use storey::containers::Column;
+    /// use storey::containers::{Column, router};
+    /// # let mut storage = TestStorage::new();
     ///
-    /// let mut storage = TestStorage::new();
-    /// let column = Column::<u64, TestEncoding>::new(0);
-    /// let mut access = column.access(&mut storage);
+    /// router! {
+    ///     router Root {
+    ///         0 -> column: Column<u64, TestEncoding>,
+    ///     }
+    /// }
     ///
-    /// assert_eq!(access.get_or(1, 42).unwrap(), 42);
-    /// access.push(&1337).unwrap();
-    /// assert_eq!(access.get_or(1, 42).unwrap(), 1337);
+    /// assert_eq!(Root::access(&storage).column().get_or(1, 42).unwrap(), 42);
+    /// Root::access(&mut storage).column_mut().push(&1337).unwrap();
+    /// assert_eq!(Root::access(&storage).column().get_or(1, 42).unwrap(), 1337);
     /// ```
     pub fn get_or(&self, id: u32, default: T) -> Result<T, E::DecodeError> {
         self.get(id).map(|value| value.unwrap_or(default))
@@ -263,17 +227,20 @@ where
     /// ```
     /// # use mocks::encoding::TestEncoding;
     /// # use mocks::backend::TestStorage;
-    /// use storey::containers::Column;
+    /// use storey::containers::{Column, router};
+    /// # let mut storage = TestStorage::new();
     ///
-    /// let mut storage = TestStorage::new();
-    /// let column = Column::<u64, TestEncoding>::new(0);
-    /// let mut access = column.access(&mut storage);
+    /// router! {
+    ///     router Root {
+    ///         0 -> column: Column<u64, TestEncoding>,
+    ///     }
+    /// }
     ///
-    /// assert_eq!(access.len().unwrap(), 0);
+    /// assert_eq!(Root::access(&storage).column().len().unwrap(), 0);
     ///
-    /// access.push(&1337).unwrap();
+    /// Root::access(&mut storage).column_mut().push(&1337).unwrap();
     ///
-    /// assert_eq!(access.len().unwrap(), 1);
+    /// assert_eq!(Root::access(&storage).column().len().unwrap(), 1);
     /// ```
     pub fn len(&self) -> Result<u32, LenError> {
         // TODO: bounds check + error handlinge
@@ -296,17 +263,20 @@ where
     /// ```
     /// # use mocks::encoding::TestEncoding;
     /// # use mocks::backend::TestStorage;
-    /// use storey::containers::Column;
+    /// use storey::containers::{Column, router};
+    /// # let mut storage = TestStorage::new();
     ///
-    /// let mut storage = TestStorage::new();
-    /// let column = Column::<u64, TestEncoding>::new(0);
-    /// let mut access = column.access(&mut storage);
+    /// router! {
+    ///     router Root {
+    ///         0 -> column: Column<u64, TestEncoding>,
+    ///     }
+    /// }
     ///
-    /// assert_eq!(access.is_empty().unwrap(), true);
+    /// assert_eq!(Root::access(&storage).column().is_empty().unwrap(), true);
     ///
-    /// access.push(&1337).unwrap();
+    /// Root::access(&mut storage).column_mut().push(&1337).unwrap();
     ///
-    /// assert_eq!(access.is_empty().unwrap(), false);
+    /// assert_eq!(Root::access(&storage).column().is_empty().unwrap(), false);
     /// ```
     pub fn is_empty(&self) -> Result<bool, LenError> {
         self.len().map(|len| len == 0)
@@ -342,16 +312,17 @@ where
     /// ```
     /// # use mocks::encoding::TestEncoding;
     /// # use mocks::backend::TestStorage;
-    /// use storey::containers::Column;
+    /// use storey::containers::{Column, router};
+    /// # let mut storage = TestStorage::new();
     ///
-    /// const COLUMN_KEY: u8 = 0;
+    /// router! {
+    ///     router Root {
+    ///         0 -> column: Column<u64, TestEncoding>,
+    ///     }
+    /// }
     ///
-    /// let mut storage = TestStorage::new();
-    /// let column = Column::<u64, TestEncoding>::new(COLUMN_KEY);
-    /// let mut access = column.access(&mut storage);
-    ///
-    /// assert_eq!(access.push(&1337).unwrap(), 1);
-    /// assert_eq!(access.push(&42).unwrap(), 2);
+    /// assert_eq!(Root::access(&mut storage).column_mut().push(&1337).unwrap(), 1);
+    /// assert_eq!(Root::access(&mut storage).column_mut().push(&42).unwrap(), 2);
     /// ```
     pub fn push(&mut self, value: &T) -> Result<u32, PushError<E::EncodeError>> {
         let bytes = value.encode()?;
@@ -386,17 +357,20 @@ where
     /// ```
     /// # use mocks::encoding::TestEncoding;
     /// # use mocks::backend::TestStorage;
-    /// use storey::containers::Column;
+    /// use storey::containers::{Column, router};
+    /// # let mut storage = TestStorage::new();
     ///
-    /// let mut storage = TestStorage::new();
-    /// let column = Column::<u64, TestEncoding>::new(0);
-    /// let mut access = column.access(&mut storage);
+    /// router! {
+    ///     router Root {
+    ///         0 -> column: Column<u64, TestEncoding>,
+    ///     }
+    /// }
     ///
-    /// access.push(&1337).unwrap();
-    /// assert_eq!(access.get(1).unwrap(), Some(1337));
+    /// Root::access(&mut storage).column_mut().push(&1337).unwrap();
+    /// assert_eq!(Root::access(&storage).column().get(1).unwrap(), Some(1337));
     ///
-    /// access.set(1, &9001).unwrap();
-    /// assert_eq!(access.get(1).unwrap(), Some(9001));
+    /// Root::access(&mut storage).column_mut().set(1, &9001).unwrap();
+    /// assert_eq!(Root::access(&storage).column().get(1).unwrap(), Some(9001));
     /// ```
     pub fn set(&mut self, id: u32, value: &T) -> Result<(), SetError<E::EncodeError>> {
         self.storage.get(&encode_id(id)).ok_or(SetError::NotFound)?;
@@ -417,17 +391,20 @@ where
     /// ```
     /// # use mocks::encoding::TestEncoding;
     /// # use mocks::backend::TestStorage;
-    /// use storey::containers::Column;
+    /// use storey::containers::{Column, router};
+    /// # let mut storage = TestStorage::new();
     ///
-    /// let mut storage = TestStorage::new();
-    /// let column = Column::<u64, TestEncoding>::new(0);
-    /// let mut access = column.access(&mut storage);
+    /// router! {
+    ///     router Root {
+    ///         0 -> column: Column<u64, TestEncoding>,
+    ///     }
+    /// }
     ///
-    /// access.push(&1337).unwrap();
-    /// assert_eq!(access.get(1).unwrap(), Some(1337));
+    /// Root::access(&mut storage).column_mut().push(&1337).unwrap();
+    /// assert_eq!(Root::access(&storage).column().get(1).unwrap(), Some(1337));
     ///
-    /// access.update(1, |value| value.map(|v| v + 1)).unwrap();
-    /// assert_eq!(access.get(1).unwrap(), Some(1338));
+    /// Root::access(&mut storage).column_mut().update(1, |value| value.map(|v| v + 1)).unwrap();
+    /// assert_eq!(Root::access(&storage).column().get(1).unwrap(), Some(1338));
     /// ```
     pub fn update<F>(
         &mut self,
@@ -454,17 +431,20 @@ where
     /// ```
     /// # use mocks::encoding::TestEncoding;
     /// # use mocks::backend::TestStorage;
-    /// use storey::containers::Column;
+    /// use storey::containers::{Column, router};
+    /// # let mut storage = TestStorage::new();
     ///
-    /// let mut storage = TestStorage::new();
-    /// let column = Column::<u64, TestEncoding>::new(0);
-    /// let mut access = column.access(&mut storage);
+    /// router! {
+    ///     router Root {
+    ///         0 -> column: Column<u64, TestEncoding>,
+    ///     }
+    /// }
     ///
-    /// access.push(&1337).unwrap();
-    /// assert_eq!(access.get(1).unwrap(), Some(1337));
+    /// Root::access(&mut storage).column_mut().push(&1337).unwrap();
+    /// assert_eq!(Root::access(&storage).column().get(1).unwrap(), Some(1337));
     ///
-    /// access.remove(1).unwrap();
-    /// assert_eq!(access.get(1).unwrap(), None);
+    /// Root::access(&mut storage).column_mut().remove(1).unwrap();
+    /// assert_eq!(Root::access(&storage).column().get(1).unwrap(), None);
     /// ```
     pub fn remove(&mut self, id: u32) -> Result<(), RemoveError> {
         self.storage.remove(&encode_id(id));
@@ -533,6 +513,7 @@ pub enum LenError {
 mod tests {
     use std::ops::Bound;
 
+    use crate::containers::test_utils::BranchContainer;
     use crate::containers::{BoundedRevIterableAccessor as _, RevIterableAccessor as _};
 
     use super::*;
@@ -542,10 +523,11 @@ mod tests {
 
     #[test]
     fn basic() {
+        type Column0 = BranchContainer<0, Column<u64, TestEncoding>>;
+
         let mut storage = TestStorage::new();
 
-        let column = Column::<u64, TestEncoding>::new(0);
-        let mut access = column.access(&mut storage);
+        let mut access = Column0::access(&mut storage);
 
         assert_eq!(access.push(&1337).unwrap(), 1);
         assert_eq!(access.push(&42).unwrap(), 2);
@@ -566,10 +548,11 @@ mod tests {
 
     #[test]
     fn remove() {
+        type Column0 = BranchContainer<0, Column<u64, TestEncoding>>;
+
         let mut storage = TestStorage::new();
 
-        let column = Column::<u64, TestEncoding>::new(0);
-        let mut access = column.access(&mut storage);
+        let mut access = Column0::access(&mut storage);
 
         assert_eq!(access.push(&1337).unwrap(), 1);
         assert_eq!(access.push(&42).unwrap(), 2);
@@ -596,10 +579,11 @@ mod tests {
 
     #[test]
     fn update() {
+        type Column0 = BranchContainer<0, Column<u64, TestEncoding>>;
+
         let mut storage = TestStorage::new();
 
-        let column = Column::<u64, TestEncoding>::new(0);
-        let mut access = column.access(&mut storage);
+        let mut access = Column0::access(&mut storage);
 
         access.push(&1337).unwrap();
         access.push(&42).unwrap();
@@ -618,10 +602,11 @@ mod tests {
 
     #[test]
     fn iteration() {
+        type Column0 = BranchContainer<0, Column<u64, TestEncoding>>;
+
         let mut storage = TestStorage::new();
 
-        let column = Column::<u64, TestEncoding>::new(0);
-        let mut access = column.access(&mut storage);
+        let mut access = Column0::access(&mut storage);
 
         access.push(&1337).unwrap();
         access.push(&42).unwrap();
@@ -646,10 +631,11 @@ mod tests {
 
     #[test]
     fn rev_iteration() {
+        type Column0 = BranchContainer<0, Column<u64, TestEncoding>>;
+
         let mut storage = TestStorage::new();
 
-        let column = Column::<u64, TestEncoding>::new(0);
-        let mut access = column.access(&mut storage);
+        let mut access = Column0::access(&mut storage);
 
         access.push(&1337).unwrap();
         access.push(&42).unwrap();
@@ -674,10 +660,11 @@ mod tests {
 
     #[test]
     fn bounded_iteration() {
+        type Column0 = BranchContainer<0, Column<u64, TestEncoding>>;
+
         let mut storage = TestStorage::new();
 
-        let column = Column::<u64, TestEncoding>::new(0);
-        let mut access = column.access(&mut storage);
+        let mut access = Column0::access(&mut storage);
 
         access.push(&1337).unwrap();
         access.push(&42).unwrap();
@@ -774,10 +761,11 @@ mod tests {
 
     #[test]
     fn bounded_rev_iteration() {
+        type Column0 = BranchContainer<0, Column<u64, TestEncoding>>;
+
         let mut storage = TestStorage::new();
 
-        let column = Column::<u64, TestEncoding>::new(0);
-        let mut access = column.access(&mut storage);
+        let mut access = Column0::access(&mut storage);
 
         access.push(&1337).unwrap(); //1
         access.push(&42).unwrap(); //2
