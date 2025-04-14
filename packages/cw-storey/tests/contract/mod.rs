@@ -6,9 +6,14 @@ use cosmwasm_std::{
 };
 
 use cw_storey::containers::{Item, Map};
+use storey::containers::router;
 
-const ITEM: Item<u32> = Item::new(0);
-const MAP: Map<String, Item<u32>> = Map::new(1);
+router! {
+    router Root {
+        0 -> item: Item<u32>,
+        1 -> map: Map<String, Item<u32>>,
+    }
+}
 
 //#[entry_point]
 pub fn instantiate(
@@ -50,7 +55,7 @@ mod execute {
     use super::*;
 
     pub(crate) fn set_item(deps: DepsMut, val: u32) -> Result<Response, StdError> {
-        ITEM.access(deps.storage).set(&val)?;
+        Root::access(deps.storage).item_mut().set(&val)?;
 
         Ok(Response::default())
     }
@@ -60,7 +65,10 @@ mod execute {
         key: String,
         val: u32,
     ) -> Result<Response, StdError> {
-        MAP.access(deps.storage).entry_mut(&key).set(&val)?;
+        Root::access(deps.storage)
+            .map_mut()
+            .entry_mut(&key)
+            .set(&val)?;
 
         Ok(Response::default())
     }
@@ -72,15 +80,16 @@ mod query {
     use super::*;
 
     pub(crate) fn get_item(deps: Deps) -> StdResult<Option<u32>> {
-        ITEM.access(deps.storage).get()
+        Root::access(deps.storage).item().get()
     }
 
     pub(crate) fn get_map_entry(deps: Deps, key: String) -> StdResult<Option<u32>> {
-        MAP.access(deps.storage).entry(&key).get()
+        Root::access(deps.storage).map().entry(&key).get()
     }
 
     pub(crate) fn get_map_entries(deps: Deps) -> StdResult<Vec<(String, u32)>> {
-        MAP.access(deps.storage)
+        Root::access(deps.storage)
+            .map()
             .pairs()
             .map(|res| res.map_err(|e| StdError::generic_err(e.to_string())))
             .map(|res| res.map(|((k, ()), v)| (k, v)))
