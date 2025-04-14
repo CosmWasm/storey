@@ -28,16 +28,29 @@ mod tests {
 
     use cosmwasm_std::Addr;
     use mocks::backend::TestStorage;
+    use storey::containers::router;
 
     #[test]
     fn map_addr() {
-        let map: Map<Addr, Item<u32>> = Map::new(0);
+        router! {
+            router Root {
+                0 -> map: Map<Addr, Item<u32>>,
+            }
+        }
+
         let mut storage = TestStorage::new();
 
         let key = Addr::unchecked("addr1");
 
-        map.access(&mut storage).entry_mut(&key).set(&42).unwrap();
+        Root::access(&mut storage)
+            .map_mut()
+            .entry_mut(&key)
+            .set(&42)
+            .unwrap();
 
-        assert_eq!(map.access(&storage).entry(&key).get().unwrap(), Some(42));
+        assert_eq!(
+            Root::access(&storage).map().entry(&key).get().unwrap(),
+            Some(42)
+        );
     }
 }

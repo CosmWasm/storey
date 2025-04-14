@@ -34,15 +34,17 @@ mod tests {
     fn nested() {
         let mut storage = TestStorage::new();
 
-        let map: Map<u32, Foo> = Map::new(0);
+        router!(
+            router Bar {
+                0 -> map: Map<u32, Foo>,
+            }
+        );
 
-        map.access(&mut storage)
-            .entry_mut(&0)
-            .a_mut()
-            .set(&5)
-            .unwrap();
-        assert_eq!(map.access(&storage).entry(&0).a().get().unwrap(), Some(5));
-        assert_eq!(map.access(&storage).entry(&1).a().get().unwrap(), None);
+        let mut access = Bar::access(&mut storage);
+
+        access.map_mut().entry_mut(&0).a_mut().set(&5).unwrap();
+        assert_eq!(access.map().entry(&0).a().get().unwrap(), Some(5));
+        assert_eq!(access.map().entry(&1).a().get().unwrap(), None);
     }
 
     #[test]

@@ -4,13 +4,20 @@ use storey::containers::{BoundedIterableAccessor, Item, IterableAccessor as _, M
 
 use mocks::backend::TestStorage;
 use mocks::encoding::TestEncoding;
+use storey_macros::router;
 
 #[test]
 fn map_of_map_iteration() {
     let mut storage = TestStorage::new();
 
-    let map = Map::<String, Map<String, Item<u64, TestEncoding>>>::new(0);
-    let mut access = map.access(&mut storage);
+    router! {
+        router Root {
+            0 -> map: Map<String, Map<String, Item<u64, TestEncoding>>>,
+        }
+    }
+
+    let mut root_access = Root::access(&mut storage);
+    let mut access = root_access.map_mut();
 
     // populate with data
     access.entry_mut("foo").entry_mut("bar").set(&1337).unwrap();
@@ -51,8 +58,14 @@ fn map_of_map_iteration() {
 fn map_of_map_bounded_iteration() {
     let mut storage = TestStorage::new();
 
-    let map = Map::<String, Map<String, Item<u64, TestEncoding>>>::new(0);
-    let mut access = map.access(&mut storage);
+    router! {
+        router Root {
+            0 -> map: Map<String, Map<String, Item<u64, TestEncoding>>>,
+        }
+    }
+
+    let mut root_access = Root::access(&mut storage);
+    let mut access = root_access.map_mut();
 
     // populate with data
     access.entry_mut("foo").entry_mut("bar").set(&1337).unwrap();

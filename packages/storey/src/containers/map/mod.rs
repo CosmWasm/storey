@@ -8,7 +8,7 @@ use key_encoding::KeyEncodingT;
 
 use std::{borrow::Borrow, marker::PhantomData};
 
-use crate::storage::{IntoStorage, IterableStorage, StorageBranch};
+use crate::storage::{IterableStorage, StorageBranch};
 
 use self::key::DynamicKey;
 use self::key::FixedSizeKey;
@@ -43,11 +43,17 @@ use super::Terminal;
 /// ```
 /// # use mocks::encoding::TestEncoding;
 /// # use mocks::backend::TestStorage;
-/// use storey::containers::{Item, Map};
+/// use storey::containers::{Item, Map, router};
 ///
-/// let mut storage = TestStorage::new();
-/// let map = Map::<String, Item<u64, TestEncoding>>::new(0);
-/// let mut access = map.access(&mut storage);
+/// router! {
+///     router Root {
+///         0 -> item: Map<String, Item<u64, TestEncoding>>,
+///     }
+/// }
+///
+/// # let mut storage = TestStorage::new();
+/// let mut root_access = Root::access(&mut storage);
+/// let mut access = root_access.item_mut();
 ///
 /// access.entry_mut("foo").set(&1337).unwrap();
 /// assert_eq!(access.entry("foo").get().unwrap(), Some(1337));
@@ -57,61 +63,24 @@ use super::Terminal;
 /// ```
 /// # use mocks::encoding::TestEncoding;
 /// # use mocks::backend::TestStorage;
-/// use storey::containers::{Item, Map};
+/// use storey::containers::{Item, Map, router};
 ///
-/// let mut storage = TestStorage::new();
-/// let map = Map::<String, Map<String, Item<u64, TestEncoding>>>::new(0);
-/// let mut access = map.access(&mut storage);
+/// router! {
+///     router Root {
+///         0 -> item: Map<String, Map<String, Item<u64, TestEncoding>>>,
+///     }
+/// }
+///
+/// # let mut storage = TestStorage::new();
+/// let mut root_access = Root::access(&mut storage);
+/// let mut access = root_access.item_mut();
 ///
 /// access.entry_mut("foo").entry_mut("bar").set(&1337).unwrap();
 /// assert_eq!(access.entry("foo").entry("bar").get().unwrap(), Some(1337));
 /// assert_eq!(access.entry("foo").entry("baz").get().unwrap(), None);
 /// ```
 pub struct Map<K: ?Sized, V, KS = DefaultKeySet> {
-    prefix: u8,
     phantom: PhantomData<(*const K, V, KS)>,
-}
-
-impl<K, V, KS> Map<K, V, KS> {
-    /// Creates a new map with the given prefix.
-    ///
-    /// It is the responsibility of the caller to ensure that the prefix is unique and does not conflict
-    /// with other keys in the storage.
-    ///
-    /// The key provided here is used as a prefix for all keys managed by the map.
-    pub const fn new(prefix: u8) -> Self {
-        Self {
-            prefix,
-            phantom: PhantomData,
-        }
-    }
-
-    /// Acquires an accessor for the map.
-    ///
-    /// # Example
-    /// ```
-    /// # use mocks::encoding::TestEncoding;
-    /// # use mocks::backend::TestStorage;
-    /// use storey::containers::{Item, Map};
-    ///
-    /// // immutable access
-    /// let storage = TestStorage::new();
-    /// let map = Map::<String, Item<u64, TestEncoding>>::new(0);
-    /// let access = map.access(&storage);
-    ///
-    /// // mutable access
-    /// let mut storage = TestStorage::new();
-    /// let map = Map::<String, Item<u64, TestEncoding>>::new(0);
-    /// let mut access = map.access(&mut storage);
-    /// ```
-    pub fn access<F, S>(&self, storage: F) -> MapAccess<K, V, StorageBranch<S>, KS>
-    where
-        (F,): IntoStorage<S>,
-    {
-        let storage = (storage,).into_storage();
-
-        Self::access_impl(StorageBranch::new(storage, vec![self.prefix]))
-    }
 }
 
 impl<K, V, KS> Storable for Map<K, V, KS> {
@@ -215,11 +184,17 @@ where
     /// ```
     /// # use mocks::encoding::TestEncoding;
     /// # use mocks::backend::TestStorage;
-    /// use storey::containers::{Item, Map};
+    /// use storey::containers::{Item, Map, router};
     ///
-    /// let storage = TestStorage::new();
-    /// let map = Map::<String, Item<u64, TestEncoding>>::new(0);
-    /// let access = map.access(&storage);
+    /// router! {
+    ///     router Root {
+    ///         0 -> item: Map<String, Item<u64, TestEncoding>>,
+    ///     }
+    /// }
+    ///
+    /// # let mut storage = TestStorage::new();
+    /// let mut root_access = Root::access(&mut storage);
+    /// let mut access = root_access.item_mut();
     ///
     /// assert_eq!(access.entry("foo").get().unwrap(), None);
     /// ```
@@ -227,11 +202,17 @@ where
     /// ```
     /// # use mocks::encoding::TestEncoding;
     /// # use mocks::backend::TestStorage;
-    /// use storey::containers::{Item, Map};
+    /// use storey::containers::{Item, Map, router};
     ///
-    /// let storage = TestStorage::new();
-    /// let map = Map::<String, Map<String, Item<u64, TestEncoding>>>::new(0);
-    /// let access = map.access(&storage);
+    /// router! {
+    ///     router Root {
+    ///         0 -> item: Map<String, Map<String, Item<u64, TestEncoding>>>,
+    ///     }
+    /// }
+    ///
+    /// # let mut storage = TestStorage::new();
+    /// let mut root_access = Root::access(&mut storage);
+    /// let mut access = root_access.item_mut();
     ///
     /// assert_eq!(access.entry("foo").entry("bar").get().unwrap(), None);
     /// ```
@@ -257,11 +238,17 @@ where
     /// ```
     /// # use mocks::encoding::TestEncoding;
     /// # use mocks::backend::TestStorage;
-    /// use storey::containers::{Item, Map};
+    /// use storey::containers::{Item, Map, router};
     ///
-    /// let mut storage = TestStorage::new();
-    /// let map = Map::<String, Item<u64, TestEncoding>>::new(0);
-    /// let mut access = map.access(&mut storage);
+    /// router! {
+    ///     router Root {
+    ///         0 -> item: Map<String, Item<u64, TestEncoding>>,
+    ///     }
+    /// }
+    ///
+    /// # let mut storage = TestStorage::new();
+    /// let mut root_access = Root::access(&mut storage);
+    /// let mut access = root_access.item_mut();
     ///
     /// access.entry_mut("foo").set(&1337).unwrap();
     /// assert_eq!(access.entry("foo").get().unwrap(), Some(1337));
@@ -270,11 +257,17 @@ where
     /// ```
     /// # use mocks::encoding::TestEncoding;
     /// # use mocks::backend::TestStorage;
-    /// use storey::containers::{Item, Map};
+    /// use storey::containers::{Item, Map, router};
     ///
-    /// let mut storage = TestStorage::new();
-    /// let map = Map::<String, Map<String, Item<u64, TestEncoding>>>::new(0);
-    /// let mut access = map.access(&mut storage);
+    /// router! {
+    ///     router Root {
+    ///         0 -> item: Map<String, Map<String, Item<u64, TestEncoding>>>,
+    ///     }
+    /// }
+    ///
+    /// # let mut storage = TestStorage::new();
+    /// let mut root_access = Root::access(&mut storage);
+    /// let mut access = root_access.item_mut();
     ///
     /// access.entry_mut("foo").entry_mut("bar").set(&1337).unwrap();
     /// assert_eq!(access.entry("foo").entry("bar").get().unwrap(), Some(1337));
@@ -365,6 +358,7 @@ mod tests {
 
     use super::*;
 
+    use crate::containers::test_utils::BranchContainer;
     use crate::containers::Item;
 
     use mocks::backend::TestStorage;
@@ -373,32 +367,35 @@ mod tests {
 
     #[test]
     fn map() {
+        type MapOfItems = BranchContainer<0, Map<String, Item<u64, TestEncoding>>>;
+
         let mut storage = TestStorage::new();
 
-        let map = Map::<String, Item<u64, TestEncoding>>::new(0);
+        let mut access = MapOfItems::access(&mut storage);
 
-        map.access(&mut storage)
-            .entry_mut("foo")
-            .set(&1337)
-            .unwrap();
+        access.entry_mut("foo").set(&1337).unwrap();
 
-        assert_eq!(map.access(&storage).entry("foo").get().unwrap(), Some(1337));
+        assert_eq!(access.entry("foo").get().unwrap(), Some(1337));
         assert_eq!(
             storage.get(&[0, 102, 111, 111]),
             Some(1337u64.to_le_bytes().to_vec())
         );
-        map.access(&mut storage).entry_mut("foo").remove();
 
-        assert_eq!(map.access(&storage).entry("foo").get().unwrap(), None);
-        assert_eq!(map.access(&storage).entry("bar").get().unwrap(), None);
+        let mut access = MapOfItems::access(&mut storage);
+
+        access.entry_mut("foo").remove();
+
+        assert_eq!(access.entry("foo").get().unwrap(), None);
+        assert_eq!(access.entry("bar").get().unwrap(), None);
     }
 
     #[test]
     fn bounded_iter_dyn_map_of_item() {
+        type MapOfItems = BranchContainer<0, Map<String, Item<u64, TestEncoding>>>;
+
         let mut storage = TestStorage::new();
 
-        let map = Map::<String, Item<u64, TestEncoding>>::new(0);
-        let mut access = map.access(&mut storage);
+        let mut access = MapOfItems::access(&mut storage);
 
         access.entry_mut("foo").set(&1337).unwrap();
         access.entry_mut("bar").set(&42).unwrap();
@@ -428,10 +425,11 @@ mod tests {
 
     #[test]
     fn iter_static_map_of_item() {
+        type MapOfItems = BranchContainer<0, Map<String, Item<u64, TestEncoding>>>;
+
         let mut storage = TestStorage::new();
 
-        let map = Map::<String, Item<u64, TestEncoding>>::new(0);
-        let mut access = map.access(&mut storage);
+        let mut access = MapOfItems::access(&mut storage);
 
         access.entry_mut("foo").set(&1337).unwrap();
         access.entry_mut("bar").set(&42).unwrap();
@@ -450,10 +448,11 @@ mod tests {
 
     #[test]
     fn bounded_iter_static_map_of_map() {
+        type MapOfMaps = BranchContainer<0, Map<u32, Map<String, Item<u64, TestEncoding>>>>;
+
         let mut storage = TestStorage::new();
 
-        let map = Map::<u32, Map<String, Item<u64, TestEncoding>>>::new(0);
-        let mut access = map.access(&mut storage);
+        let mut access = MapOfMaps::access(&mut storage);
 
         access.entry_mut(&2).entry_mut("bar").set(&1337).unwrap();
         access.entry_mut(&3).entry_mut("baz").set(&42).unwrap();
@@ -475,10 +474,11 @@ mod tests {
 
     #[test]
     fn pairs() {
+        type MapOfItems = BranchContainer<0, Map<String, Item<u64, TestEncoding>>>;
+
         let mut storage = TestStorage::new();
 
-        let map = Map::<String, Item<u64, TestEncoding>>::new(0);
-        let mut access = map.access(&mut storage);
+        let mut access = MapOfItems::access(&mut storage);
 
         access.entry_mut("foo").set(&1337).unwrap();
         access.entry_mut("bar").set(&42).unwrap();
@@ -495,10 +495,11 @@ mod tests {
 
     #[test]
     fn keys() {
+        type MapOfItems = BranchContainer<0, Map<String, Item<u64, TestEncoding>>>;
+
         let mut storage = TestStorage::new();
 
-        let map = Map::<String, Item<u64, TestEncoding>>::new(0);
-        let mut access = map.access(&mut storage);
+        let mut access = MapOfItems::access(&mut storage);
 
         access.entry_mut("foo").set(&1337).unwrap();
         access.entry_mut("bar").set(&42).unwrap();
@@ -509,10 +510,11 @@ mod tests {
 
     #[test]
     fn values() {
+        type MapOfItems = BranchContainer<0, Map<String, Item<u64, TestEncoding>>>;
+
         let mut storage = TestStorage::new();
 
-        let map = Map::<String, Item<u64, TestEncoding>>::new(0);
-        let mut access = map.access(&mut storage);
+        let mut access = MapOfItems::access(&mut storage);
 
         access.entry_mut("foo").set(&1337).unwrap();
         access.entry_mut("bar").set(&42).unwrap();

@@ -66,7 +66,7 @@ pub use storey_macros::Key;
 /// }
 ///
 /// // use the key set with a map
-/// let map: storey::containers::map::Map<String, u32, MyKeySet> = storey::containers::map::Map::new(0);
+/// type MyMap = storey::containers::map::Map<MyKey, u32, MyKeySet>;
 /// ```
 pub trait Key<KS = DefaultKeySet> {
     /// The kind of key, meaning either fixed size or dynamic size.
