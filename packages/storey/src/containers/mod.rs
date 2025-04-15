@@ -5,6 +5,8 @@ mod column;
 pub mod common;
 mod item;
 pub mod map;
+#[cfg(test)]
+mod test_utils;
 
 use std::{marker::PhantomData, ops::Bound};
 
