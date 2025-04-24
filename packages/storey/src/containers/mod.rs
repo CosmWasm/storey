@@ -18,6 +18,7 @@ pub use storey_macros::router;
 
 pub use column::{Column, ColumnAccess};
 pub use item::{Item, ItemAccess};
+pub use map::set::Set;
 pub use map::{Map, MapAccess};
 
 /// The fundamental trait every collection/container should implement.

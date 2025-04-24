@@ -1,5 +1,6 @@
 pub mod key;
 mod key_encoding;
+pub mod set;
 
 use key::DefaultKeySet;
 pub use key::{Key, OwnedKey};
