@@ -6,12 +6,12 @@ repository = { workspace = true }
 homepage = { workspace = true }
 categories = { workspace = true }
 keywords = { workspace = true }
-version = "0.7.0-ibc2.0"
+version = "0.7.0-rc.0"
 edition = "2021"
 license = { workspace = true }
 
 [dependencies]
-cosmwasm-std = "3.0.0-ibc2.0"
+cosmwasm-std = "3.0.0-rc.0"
 rmp-serde = "1.1"
 serde = "1"
 
