@@ -194,7 +194,7 @@ mod tests {
 
     #[test]
     fn set_and_remove() {
-        let cw_storage = cosmwasm_std::MemoryStorage::new();
+        let cw_storage = cosmwasm_std::testing::MockStorage::new();
         let mut storage = CwStorage(cw_storage);
 
         storage.set(b"key1", b"value1");
@@ -209,7 +209,7 @@ mod tests {
 
     #[test]
     fn keys_bounded() {
-        let cw_storage = cosmwasm_std::MemoryStorage::new();
+        let cw_storage = cosmwasm_std::testing::MockStorage::new();
         let mut storage = CwStorage(cw_storage);
 
         storage.set(b"key1", b"value1");
@@ -229,7 +229,7 @@ mod tests {
 
     #[test]
     fn keys_unbounded() {
-        let cw_storage = cosmwasm_std::MemoryStorage::new();
+        let cw_storage = cosmwasm_std::testing::MockStorage::new();
         let mut storage = CwStorage(cw_storage);
 
         storage.set(b"key1", b"value1");
@@ -250,7 +250,7 @@ mod tests {
 
     #[test]
     fn values_bounded() {
-        let cw_storage = cosmwasm_std::MemoryStorage::new();
+        let cw_storage = cosmwasm_std::testing::MockStorage::new();
         let mut storage = CwStorage(cw_storage);
 
         storage.set(b"key1", b"value1");
@@ -270,7 +270,7 @@ mod tests {
 
     #[test]
     fn values_unbounded() {
-        let cw_storage = cosmwasm_std::MemoryStorage::new();
+        let cw_storage = cosmwasm_std::testing::MockStorage::new();
         let mut storage = CwStorage(cw_storage);
 
         storage.set(b"key1", b"value1");
@@ -291,7 +291,7 @@ mod tests {
 
     #[test]
     fn pairs_bounded() {
-        let cw_storage = cosmwasm_std::MemoryStorage::new();
+        let cw_storage = cosmwasm_std::testing::MockStorage::new();
         let mut storage = CwStorage(cw_storage);
 
         storage.set(b"key1", b"value1");
@@ -323,7 +323,7 @@ mod tests {
 
     #[test]
     fn pairs_unbounded() {
-        let cw_storage = cosmwasm_std::MemoryStorage::new();
+        let cw_storage = cosmwasm_std::testing::MockStorage::new();
         let mut storage = CwStorage(cw_storage);
 
         storage.set(b"key1", b"value1");
@@ -355,7 +355,7 @@ mod tests {
 
     #[test]
     fn rev_keys_bounded() {
-        let cw_storage = cosmwasm_std::MemoryStorage::new();
+        let cw_storage = cosmwasm_std::testing::MockStorage::new();
         let mut storage = CwStorage(cw_storage);
 
         storage.set(b"key1", b"value1");
@@ -375,7 +375,7 @@ mod tests {
 
     #[test]
     fn rev_keys_unbounded() {
-        let cw_storage = cosmwasm_std::MemoryStorage::new();
+        let cw_storage = cosmwasm_std::testing::MockStorage::new();
         let mut storage = CwStorage(cw_storage);
 
         storage.set(b"key1", b"value1");
@@ -398,7 +398,7 @@ mod tests {
 
     #[test]
     fn rev_values_bounded() {
-        let cw_storage = cosmwasm_std::MemoryStorage::new();
+        let cw_storage = cosmwasm_std::testing::MockStorage::new();
         let mut storage = CwStorage(cw_storage);
 
         storage.set(b"key1", b"value1");
@@ -418,7 +418,7 @@ mod tests {
 
     #[test]
     fn rev_values_unbounded() {
-        let cw_storage = cosmwasm_std::MemoryStorage::new();
+        let cw_storage = cosmwasm_std::testing::MockStorage::new();
         let mut storage = CwStorage(cw_storage);
 
         storage.set(b"key1", b"value1");
@@ -441,7 +441,7 @@ mod tests {
 
     #[test]
     fn rev_pairs_bounded() {
-        let cw_storage = cosmwasm_std::MemoryStorage::new();
+        let cw_storage = cosmwasm_std::testing::MockStorage::new();
         let mut storage = CwStorage(cw_storage);
 
         storage.set(b"key1", b"value1");
@@ -473,7 +473,7 @@ mod tests {
 
     #[test]
     fn rev_pairs_unbounded() {
-        let cw_storage = cosmwasm_std::MemoryStorage::new();
+        let cw_storage = cosmwasm_std::testing::MockStorage::new();
         let mut storage = CwStorage(cw_storage);
 
         storage.set(b"key1", b"value1");
@@ -508,7 +508,7 @@ mod tests {
     fn into_storage() {
         use cosmwasm_std::Storage as _;
 
-        let mut storage = cosmwasm_std::MemoryStorage::new();
+        let mut storage = cosmwasm_std::testing::MockStorage::new();
         storage.set(b"key", b"value");
 
         let storage_ref = (&storage,).into_storage();
@@ -519,7 +519,7 @@ mod tests {
     fn into_storage_mut() {
         use cosmwasm_std::Storage as _;
 
-        let mut storage = cosmwasm_std::MemoryStorage::new();
+        let mut storage = cosmwasm_std::testing::MockStorage::new();
         let storage_ref = (&mut storage,).into_storage();
 
         storage_ref.set(b"key", b"value");
